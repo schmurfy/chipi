@@ -13,24 +13,18 @@ import (
 )
 
 type Builder struct {
-	router  *chi.Mux
 	swagger *openapi3.Swagger
 }
 
 func New(infos *openapi3.Info) (*Builder, error) {
-	router := chi.NewRouter()
-
 	swagger := &openapi3.Swagger{
 		OpenAPI: "3.0.0",
 		Info:    infos,
 	}
 
 	ret := &Builder{
-		router:  router,
 		swagger: swagger,
 	}
-
-	router.Get("/doc.json", ret.serveSchema)
 
 	return ret, nil
 }
@@ -39,17 +33,12 @@ func (b *Builder) AddServer(server *openapi3.Server) {
 	b.swagger.AddServer(server)
 }
 
-func (b *Builder) Router() *chi.Mux {
-	return b.router
-}
-
-func (b *Builder) serveSchema(w http.ResponseWriter, r *http.Request) {
+func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 	data, err := b.swagger.MarshalJSON()
 	if err != nil {
 		panic(err)
 	}
 
-	// w.Header().Add("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Content-Type", "application/json")
 	_, err = w.Write(data)
 	if err != nil {
@@ -61,19 +50,19 @@ func (b *Builder) serveSchema(w http.ResponseWriter, r *http.Request) {
 
 type CallbackFunc func(http.ResponseWriter, interface{})
 
-func (b *Builder) Get(pattern string, reqObject interface{}, h CallbackFunc) error {
-	return b.method(pattern, "GET", reqObject, h)
+func (b *Builder) Get(r chi.Router, pattern string, reqObject interface{}, h CallbackFunc) error {
+	return b.method(r, pattern, "GET", reqObject, h)
 }
 
-func (b *Builder) Post(pattern string, reqObject interface{}, h CallbackFunc) error {
-	return b.method(pattern, "POST", reqObject, h)
+func (b *Builder) Post(r chi.Router, pattern string, reqObject interface{}, h CallbackFunc) error {
+	return b.method(r, pattern, "POST", reqObject, h)
 }
 
-func (b *Builder) method(pattern string, method string, reqObject interface{}, h CallbackFunc) error {
+func (b *Builder) method(r chi.Router, pattern string, method string, reqObject interface{}, h CallbackFunc) error {
 	op := openapi3.NewOperation()
 	// op.Description = ""...""
 
-	b.router.Method(method, pattern, wrapRequest(reqObject, h))
+	r.Method(method, pattern, wrapRequest(reqObject, h))
 
 	// analyze parameters if any
 	typ := reflect.TypeOf(reqObject)
@@ -82,7 +71,7 @@ func (b *Builder) method(pattern string, method string, reqObject interface{}, h
 	}
 
 	// URL Parameters
-	err := b.generateParametersDoc(op, typ, method)
+	err := b.generateParametersDoc(r, op, typ, method)
 	if err != nil {
 		return err
 	}
@@ -109,6 +98,7 @@ func wrapRequest(req interface{}, h CallbackFunc) http.HandlerFunc {
 		// TODO: add checks
 		vv := reflect.New(reflect.TypeOf(req)).Elem()
 
+		// path
 		pathValue := vv.FieldByName("Path")
 
 		rctx := chi.RouteContext(r.Context())
@@ -119,11 +109,22 @@ func wrapRequest(req interface{}, h CallbackFunc) http.HandlerFunc {
 			}
 		}
 
+		// body
+		// bodyValue := vv.FieldByName("Body")
+		// if !bodyValue.IsZero() {
+		// 	decoder := json.NewDecoder(r.Body)
+		// 	obj := bodyValue.Interface()
+		// 	err := decoder.Decode(&obj)
+		// 	if err != nil {
+		// 		panic(err)
+		// 	}
+		// }
+
 		h(w, vv.Addr().Interface())
 	}
 }
 
-func (b *Builder) generateParametersDoc(op *openapi3.Operation, requestObjectType reflect.Type, method string) error {
+func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type, method string) error {
 	pathField, found := requestObjectType.FieldByName("Path")
 	if !found {
 		return errors.New("wrong struct, Path field expected")
@@ -132,7 +133,7 @@ func (b *Builder) generateParametersDoc(op *openapi3.Operation, requestObjectTyp
 	example := pathField.Tag.Get("example")
 
 	tctx := chi.NewRouteContext()
-	if b.router.Match(tctx, method, example) {
+	if r.Match(tctx, method, example) {
 		gen := openapi3gen.NewGenerator()
 
 		for _, key := range tctx.URLParams.Keys {

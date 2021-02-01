@@ -23,13 +23,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	api.Get("/pet/{Id}", GetPetRequest{}, GetPet)
-	api.Post("/pet", CreatePetRequest{}, CreatePet)
-
 	router := chi.NewRouter()
+
 	router.Use(cors.AllowAll().Handler)
-	router.Mount("/", api.Router())
+
+	router.Get("/doc.json", api.ServeSchema)
+
+	router.Group(func(r chi.Router) {
+		api.Get(r, "/pet/{Id}", GetPetRequest{}, GetPet)
+		api.Post(r, "/pet", CreatePetRequest{}, CreatePet)
+	})
 
 	http.ListenAndServe(":2121", router)
 }

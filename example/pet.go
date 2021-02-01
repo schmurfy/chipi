@@ -43,7 +43,7 @@ func CreatePet(w http.ResponseWriter, req interface{}) {
 	r := req.(*CreatePetRequest)
 
 	encoder := json.NewEncoder(w)
-	err := encoder.Encode(r)
+	err := encoder.Encode(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
