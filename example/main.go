@@ -30,8 +30,15 @@ func main() {
 	router.Get("/doc.json", api.ServeSchema)
 
 	router.Group(func(r chi.Router) {
-		api.Get(r, "/pet/{Id}", GetPetRequest{}, GetPet)
-		api.Post(r, "/pet", CreatePetRequest{}, CreatePet)
+		_, err := api.Get(r, "/pet/{Id}", &GetPetRequest{})
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = api.Post(r, "/pet", &CreatePetRequest{})
+		if err != nil {
+			panic(err)
+		}
 	})
 
 	http.ListenAndServe(":2121", router)
