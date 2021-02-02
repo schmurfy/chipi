@@ -89,18 +89,40 @@ func TestSchema(t *testing.T) {
 				Ignored bool `json:"-"`
 			}
 
-			checkGeneratedType(g, doc, &User{}, `{
-				"type": "object",
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"Age": {
-						"type": "integer",
-						"format": "int64"
+			g.It("should generate referenced type for user", func() {
+				typ := reflect.TypeOf(&User{})
+				schema, err := GenerateSchemaFor(doc, typ)
+				require.NoError(g, err)
+
+				data, err := json.Marshal(schema)
+				require.NoError(g, err)
+
+				// check returned schema
+				assert.JSONEq(g, `{
+					"$ref": "#/components/schemas/User"
+				}`, string(data))
+
+				// check that the User schema was added as component
+
+				userSchema, found := doc.Components.Schemas["User"]
+				require.True(g, found)
+
+				data, err = json.Marshal(userSchema)
+				require.NoError(g, err)
+
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"Age": {
+							"type": "integer",
+							"format": "int64"
+						}
 					}
-				}
-			}`)
+				}`, string(data))
+			})
 
 			checkGeneratedType(g, doc, time.Time{}, `{
 				"type": "string",
