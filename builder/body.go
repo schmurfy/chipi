@@ -1,35 +1,34 @@
 package builder
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateBodyDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
-		body := openapi3.NewRequestBody()
-
-		bodySchema, err := schemaFromType(bodyField.Type)
+		bodySchema, err := schema.GenerateSchemaFor(b.swagger, bodyField.Type)
 		if err != nil {
 			return err
 		}
 
-		data, err := json.Marshal(bodySchema)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("schema %v : %s\n", bodyField.Type, data)
-
-		bodyRef := &openapi3.RequestBodyRef{
-			// Ref:   "#/components/requestBodies/pet",
-			Value: body,
+		contentType, found := bodyField.Tag.Lookup("content-type")
+		if !found {
+			contentType = "application/json"
 		}
 
-		body.Content = openapi3.NewContentWithJSONSchema(bodySchema)
+		body := openapi3.NewRequestBody()
+		bodyRef := &openapi3.RequestBodyRef{Value: body}
+
+		body.Content = openapi3.Content{
+			contentType: &openapi3.MediaType{
+				Schema: bodySchema,
+			},
+		}
+		// body.Content = openapi3.NewContentWithJSONSchemaRef(bodySchema)
 		op.RequestBody = bodyRef
 	}
 

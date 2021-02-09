@@ -1,29 +1,31 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 )
 
 type Pet struct {
-	Id    string `json:"id"`
+	Id    int32  `json:"id"`
 	Name  string `json:"name"`
-	Count int    `json:"count"`
+	Count *int   `json:"count"`
 }
 
 type GetPetRequest struct {
 	Path struct {
-		Id string `example:"42"`
+		Id int32 `example:"42"`
 	} `example:"/pet/5"`
 
 	Query struct {
-		Count int `example:"2"`
+		Count *int `example:"2"`
 	}
 
 	Response Pet
 }
 
-func (r *GetPetRequest) Handle(w http.ResponseWriter) {
+func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(&Pet{
 		Id:    r.Path.Id,
@@ -40,11 +42,19 @@ func (r *GetPetRequest) Handle(w http.ResponseWriter) {
 type CreatePetRequest struct {
 	Path     struct{} `example:"/pet"`
 	Query    struct{}
-	Body     Pet
+	Body     *Pet
 	Response Pet
 }
 
-func (r *CreatePetRequest) Handle(w http.ResponseWriter) {
+func (r *CreatePetRequest) DecodeBody(body io.ReadCloser, target interface{}) error {
+	pet := target.(*Pet)
+
+	c := 56
+	pet.Count = &c
+	return nil
+}
+
+func (r *CreatePetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(r.Body)
 	if err != nil {

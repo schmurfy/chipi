@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
@@ -11,12 +12,19 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 	if found {
 		resp := openapi3.NewResponse()
 
-		responseSchema, err := schemaFromType(responseField.Type)
-		if err != nil {
-			return err
+		description, found := responseField.Tag.Lookup("description")
+		if found {
+			resp.Description = &description
 		}
 
-		resp.Content = openapi3.NewContentWithJSONSchema(responseSchema)
+		if responseField.Type.Kind() == reflect.Struct {
+			responseSchema, err := schema.GenerateSchemaFor(b.swagger, responseField.Type)
+			if err != nil {
+				return err
+			}
+
+			resp.Content = openapi3.NewContentWithJSONSchemaRef(responseSchema)
+		}
 
 		op.Responses = make(openapi3.Responses)
 		op.Responses["200"] = &openapi3.ResponseRef{

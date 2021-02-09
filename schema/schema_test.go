@@ -89,6 +89,11 @@ func TestSchema(t *testing.T) {
 				Ignored bool `json:"-"`
 			}
 
+			type Group struct {
+				Name  string
+				Users []User
+			}
+
 			g.It("should generate referenced type for user", func() {
 				typ := reflect.TypeOf(&User{})
 				schema, err := GenerateSchemaFor(doc, typ)
@@ -119,6 +124,81 @@ func TestSchema(t *testing.T) {
 						"Age": {
 							"type": "integer",
 							"format": "int64"
+						}
+					}
+				}`, string(data))
+			})
+
+			// type UploadResumeRequest struct {
+			// 	Path struct {
+			// 		Name string `example:"john"`
+			// 	} `example:"/user/john"`
+			// 	Query struct{}
+
+			// 	Body struct {
+			// 		File1 []byte
+			// 		File2 []byte
+			// 	} `content-type:"multipart/form-data"`
+			// }
+
+			g.It("should inline anonymous structures", func() {
+				st := struct {
+					Cool bool
+				}{}
+
+				typ := reflect.TypeOf(&st)
+				schema, err := GenerateSchemaFor(doc, typ)
+				require.NoError(g, err)
+
+				data, err := json.Marshal(schema)
+				require.NoError(g, err)
+
+				// check returned schema
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"Cool": {
+							"type": "boolean"
+						}
+					}
+				}`, string(data))
+			})
+
+			g.It("should generate referenced type for Group with link to User", func() {
+				typ := reflect.TypeOf(&Group{})
+				schema, err := GenerateSchemaFor(doc, typ)
+				require.NoError(g, err)
+
+				data, err := json.Marshal(schema)
+				require.NoError(g, err)
+
+				// check returned schema
+				assert.JSONEq(g, `{
+					"$ref": "#/components/schemas/Group"
+				}`, string(data))
+
+				// check that the User schema was added as component
+
+				userSchema, found := doc.Components.Schemas["User"]
+				require.True(g, found)
+
+				userSchema, found = doc.Components.Schemas["Group"]
+				require.True(g, found)
+
+				data, err = json.Marshal(userSchema)
+				require.NoError(g, err)
+
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"Name": {
+							"type": "string"
+						},
+						"Users": {
+							"type": "array",
+							"items": {
+								"$ref": "#/components/schemas/User"
+							}
 						}
 					}
 				}`, string(data))

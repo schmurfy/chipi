@@ -16,11 +16,14 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 		return errors.New("wrong struct, Path field expected")
 	}
 
-	example := pathField.Tag.Get("example")
+	// example := pathField.Tag.Get("example")
+	example, found := pathField.Tag.Lookup("example")
+	if !found {
+		return fmt.Errorf("missing tag `example`")
+	}
 
 	tctx := chi.NewRouteContext()
 	if r.Match(tctx, method, example) {
-		gen := schema.NewGenerator()
 
 		for _, key := range tctx.URLParams.Keys {
 			// pathStruct must contain all defined keys
@@ -29,7 +32,7 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 				return fmt.Errorf("wrong path struct, field %s expected", key)
 			}
 
-			schema, err := gen.GenerateSchemaRef(paramField.Type)
+			schema, err := schema.GenerateSchemaFor(b.swagger, paramField.Type)
 			if err != nil {
 				return err
 			}
@@ -44,7 +47,8 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 
 			op.AddParameter(param)
 		}
-		fmt.Printf("MATCH: %v\n", tctx.URLParams)
+	} else {
+		return fmt.Errorf("failed to match route: %s", example)
 	}
 
 	return nil

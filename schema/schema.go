@@ -14,9 +14,6 @@ var (
 )
 
 func GenerateSchemaFor(doc *openapi3.Swagger, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
-	// Get TypeInfo
-	// typeInfo := jsoninfo.GetTypeInfo(t)
-
 	schema = &openapi3.SchemaRef{}
 
 	// test pointed value for pointers
@@ -48,14 +45,26 @@ func GenerateSchemaFor(doc *openapi3.Swagger, t reflect.Type) (schema *openapi3.
 
 	// complex types
 	case reflect.Slice:
-		items, err := GenerateSchemaFor(doc, t.Elem())
-		if err != nil {
-			return nil, err
-		}
+		var items *openapi3.SchemaRef
 
-		schema.Value = &openapi3.Schema{
-			Type:  "array",
-			Items: items,
+		// []byte
+		if t.Elem().Kind() == reflect.Uint8 {
+			schema.Value = &openapi3.Schema{
+				Type:   "string",
+				Format: "binary",
+			}
+
+		} else {
+			items, err = GenerateSchemaFor(doc, t.Elem())
+			if err != nil {
+				return nil, err
+			}
+
+			schema.Value = &openapi3.Schema{
+				Type:  "array",
+				Items: items,
+			}
+
 		}
 
 	case reflect.Map:
@@ -73,6 +82,14 @@ func GenerateSchemaFor(doc *openapi3.Swagger, t reflect.Type) (schema *openapi3.
 	case reflect.Struct:
 		if t == _timeType {
 			schema.Value = openapi3.NewDateTimeSchema()
+			return
+		}
+
+		// if we have an anonymous structure, inline it and stop there
+		if t.Name() == "" {
+			schema.Value, err = generateStructureSchema(doc, t)
+			// return wether an error occured ot not so don't bother
+			// checking err which will be returned anyway
 			return
 		}
 
