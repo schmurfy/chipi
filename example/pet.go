@@ -19,7 +19,8 @@ type GetPetRequest struct {
 	} `example:"/pet/5"`
 
 	Query struct {
-		Count *int `example:"2"`
+		Count *int  `example:"2" deprecated:"true" description:"it counts... something ?"`
+		Age   []int `example:"[1,3,4]" style:"form" explode:"false" description:"line one\nline two"`
 	}
 
 	Response Pet

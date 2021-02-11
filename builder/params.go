@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -40,15 +41,50 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 			param := openapi3.NewPathParameter(key).
 				WithSchema(schema.Value)
 
-			paramsExample, found := paramField.Tag.Lookup("example")
-			if found {
-				param.Example = paramsExample
+			err = fillParamFromTags(param, paramField)
+			if err != nil {
+				return err
 			}
 
 			op.AddParameter(param)
 		}
 	} else {
 		return fmt.Errorf("failed to match route: %s", example)
+	}
+
+	return nil
+}
+
+func fillParamFromTags(param *openapi3.Parameter, f reflect.StructField) error {
+	if val, found := f.Tag.Lookup("example"); found {
+		if f.Type.Kind() == reflect.Slice {
+			ex := reflect.New(f.Type).Interface()
+
+			err := json.Unmarshal([]byte(val), &ex)
+			if err != nil {
+				return err
+			}
+			param.Example = ex
+		} else {
+			param.Example = val
+		}
+	}
+
+	if val, found := f.Tag.Lookup("description"); found {
+		param.Description = val
+	}
+
+	if val, found := f.Tag.Lookup("deprecated"); found {
+		param.Deprecated = (val == "true")
+	}
+
+	if val, found := f.Tag.Lookup("style"); found {
+		param.Style = val
+	}
+
+	if val, found := f.Tag.Lookup("explode"); found {
+		b := (val == "true")
+		param.Explode = &b
 	}
 
 	return nil

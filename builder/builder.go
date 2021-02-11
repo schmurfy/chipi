@@ -111,6 +111,12 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		return
 	}
 
+	// Headers
+	err = b.generateHeadersDoc(r, op, typ)
+	if err != nil {
+		return
+	}
+
 	// body
 	err = b.generateBodyDocumentation(op, typ)
 	if err != nil {

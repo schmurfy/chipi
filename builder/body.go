@@ -28,7 +28,15 @@ func (b *Builder) generateBodyDocumentation(op *openapi3.Operation, requestObjec
 				Schema: bodySchema,
 			},
 		}
-		// body.Content = openapi3.NewContentWithJSONSchemaRef(bodySchema)
+
+		if val, found := bodyField.Tag.Lookup("description"); found {
+			body.Description = val
+		}
+
+		if val, found := bodyField.Tag.Lookup("required"); found {
+			body.Required = (val == "true")
+		}
+
 		op.RequestBody = bodyRef
 	}
 

@@ -12,7 +12,7 @@ import (
 func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type) error {
 	pathField, found := requestObjectType.FieldByName("Query")
 	if !found {
-		return errors.New("wrong struct, Query field expected")
+		return nil
 	}
 
 	queryStructType := pathField.Type
@@ -31,9 +31,9 @@ func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operatio
 		param := openapi3.NewQueryParameter(field.Name).
 			WithSchema(schema.Value)
 
-		paramsExample, found := field.Tag.Lookup("example")
-		if found {
-			param.Example = paramsExample
+		err = fillParamFromTags(param, field)
+		if err != nil {
+			return err
 		}
 
 		op.AddParameter(param)
