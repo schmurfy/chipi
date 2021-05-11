@@ -1,20 +1,19 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 
-	// _ "embed"
+	_ "embed"
 
 	"github.com/schmurfy/chipi"
 )
 
-// go:embed index.html
+//go:embed index.html
 var indexFile []byte
 
 func main() {
@@ -48,20 +47,22 @@ func main() {
 	router.Get("/doc.json", api.ServeSchema)
 
 	router.Get("/doc", func(w http.ResponseWriter, r *http.Request) {
-		f, err := os.Open("index.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		// f, err := os.Open("index.html")
+		// if err != nil {
+		// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+		// 	return
+		// }
 
-		_, err = io.Copy(w, f)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		// _, err = io.Copy(w, f)
+		// if err != nil {
+		// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+		// 	return
+		// }
+
+		fmt.Printf("yo: %s\n", indexFile)
 
 		// embed
-		// w.Write(indexFile)
+		w.Write(indexFile)
 	})
 
 	router.Group(func(r chi.Router) {

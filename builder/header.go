@@ -31,7 +31,7 @@ func (b *Builder) generateHeadersDoc(r chi.Router, op *openapi3.Operation, reque
 		param := openapi3.NewHeaderParameter(field.Name).
 			WithSchema(schema.Value)
 
-		err = fillParamFromTags(param, field)
+		err = fillParamFromTags(requestObjectType, param, field, "Header")
 		if err != nil {
 			return err
 		}

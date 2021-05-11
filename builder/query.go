@@ -31,7 +31,7 @@ func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operatio
 		param := openapi3.NewQueryParameter(field.Name).
 			WithSchema(schema.Value)
 
-		err = fillParamFromTags(param, field)
+		err = fillParamFromTags(requestObjectType, param, field, "Query")
 		if err != nil {
 			return err
 		}
