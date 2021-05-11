@@ -12,12 +12,14 @@ import (
 )
 
 func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type, method string) error {
+	nilValue := reflect.New(requestObjectType)
+	pathMethod, hasPathAnnotations := reflect.PtrTo(requestObjectType).MethodByName("Chipi_Path_Annotations")
+
 	pathField, found := requestObjectType.FieldByName("Path")
 	if !found {
 		return errors.New("wrong struct, Path field expected")
 	}
 
-	// example := pathField.Tag.Get("example")
 	example, found := pathField.Tag.Lookup("example")
 	if !found {
 		return fmt.Errorf("missing tag `example`")
@@ -40,6 +42,24 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 
 			param := openapi3.NewPathParameter(key).
 				WithSchema(schema.Value)
+
+			// check for comments containing properties
+			if hasPathAnnotations {
+				ret := pathMethod.Func.Call([]reflect.Value{
+					nilValue,
+					reflect.ValueOf(key),
+				})
+
+				if p, ok := ret[0].Interface().(*openapi3.Parameter); ok {
+					if p.Description != "" {
+						param.Description = p.Description
+					}
+
+					if p.Example != nil {
+						param.Example = p.Example
+					}
+				}
+			}
 
 			err = fillParamFromTags(param, paramField)
 			if err != nil {
