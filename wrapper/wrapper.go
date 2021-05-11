@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -102,7 +102,7 @@ func setFValue(ctx context.Context, path string, f reflect.Value, value string) 
 
 	f.Set(v)
 
-	trace.SpanFromContext(ctx).SetAttributes(label.String(path, value))
+	trace.SpanFromContext(ctx).SetAttributes(attribute.String(path, value))
 	return nil
 }
 

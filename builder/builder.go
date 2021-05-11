@@ -16,11 +16,11 @@ type rawHandler interface {
 }
 
 type Builder struct {
-	swagger *openapi3.Swagger
+	swagger *openapi3.T
 }
 
 func New(infos *openapi3.Info) (*Builder, error) {
-	swagger := &openapi3.Swagger{
+	swagger := &openapi3.T{
 		OpenAPI: "3.0.0",
 		Info:    infos,
 	}

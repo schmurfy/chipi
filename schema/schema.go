@@ -13,7 +13,7 @@ var (
 	_timeType = reflect.TypeOf(time.Time{})
 )
 
-func GenerateSchemaFor(doc *openapi3.Swagger, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
+func GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
 	schema = &openapi3.SchemaRef{}
 
 	// test pointed value for pointers
@@ -120,7 +120,7 @@ func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", t.Name())
 }
 
-func generateStructureSchema(doc *openapi3.Swagger, t reflect.Type) (*openapi3.Schema, error) {
+func generateStructureSchema(doc *openapi3.T, t reflect.Type) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}

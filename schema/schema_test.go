@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func checkGeneratedType(g *goblin.G, doc *openapi3.Swagger, value interface{}, expected string) {
+func checkGeneratedType(g *goblin.G, doc *openapi3.T, value interface{}, expected string) {
 	g.It(fmt.Sprintf("should generate inline type for %T", value), func() {
 		typ := reflect.TypeOf(value)
 		schema, err := GenerateSchemaFor(doc, typ)
@@ -31,10 +31,10 @@ func TestSchema(t *testing.T) {
 	g := goblin.Goblin(t)
 
 	g.Describe("schema", func() {
-		var doc *openapi3.Swagger
+		var doc *openapi3.T
 
 		g.BeforeEach(func() {
-			doc = &openapi3.Swagger{}
+			doc = &openapi3.T{}
 		})
 
 		g.Describe("basic types", func() {
