@@ -1,2 +1,5 @@
 main
+chipi-gen
+example/example
+*.generated.go
 

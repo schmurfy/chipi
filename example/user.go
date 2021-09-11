@@ -15,8 +15,18 @@ type User struct {
 
 type GetUserRequest struct {
 	Path struct {
-		Name string `example:"john"`
-	} `example:"/user/john"`
+		// @description
+		// # some title
+		// The _name_ of the __user__
+		// ***
+		// - one
+		// - two
+		// ```
+		// quoted text
+		// ````
+		Name string `example:"roger"`
+		Id   int32
+	} `example:"/user/clark"`
 
 	Query struct{}
 
@@ -57,7 +67,7 @@ func (r *UploadResumeRequest) Handle(ctx context.Context, w http.ResponseWriter)
 type DownloadResumeRequest struct {
 	Path struct {
 		Name string `example:"john"`
-	} `example:"/user/john"`
+	} `example:"/user/john/download"`
 
 	Query struct{}
 

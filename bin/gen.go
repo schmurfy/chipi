@@ -31,6 +31,8 @@ func main() {
 		panic(err)
 	}
 
+	os.Exit(0)
+
 	data, err := ioutil.ReadFile("./example/pet.go")
 	if err != nil {
 		panic(err)
@@ -49,7 +51,7 @@ func main() {
 			for _, spec := range decl.Specs {
 				if tt, ok := spec.(*dst.TypeSpec); ok {
 					if st, ok := tt.Type.(*dst.StructType); ok {
-						fmt.Printf(":type: %s %v\n", tt.Name, st.Incomplete)
+						// fmt.Printf(":type: %s %v\n", tt.Name, st.Incomplete)
 
 						for _, f := range st.Fields.List {
 							// we found a sub structure, iterate on its fields
@@ -59,34 +61,6 @@ func main() {
 								}
 							}
 						}
-
-						// dst.Inspect(tt, func(n dst.Node) bool {
-						// 	// if ff, ok := n.(*dst.Field); ok {
-						// 	// 	before := ff.Decorations().Start
-						// 	// 	if len(before) > 0 {
-						// 	// 		fmt.Printf("%s[%s]:\n", tt.Name, ff.Names[0])
-
-						// 	// 		for _, line := range before {
-						// 	// 			fmt.Printf("  '%s'\n", line)
-						// 	// 		}
-
-						// 	// 	}
-						// 	// }
-
-						// 	if str, ok := tt.Type.(*dst.StructType); ok {
-						// 		for _, f := range str.Fields.List {
-
-						// 			if str2, ok := f.Type.(*dst.StructType); ok {
-						// 				for _, f2 := range str2.Fields.List {
-						// 					fmt.Printf("%s[%s] %s\n", tt.Name, f.Names[0], f2.Names[0])
-						// 				}
-						// 			}
-						// 		}
-
-						// 	}
-
-						// 	return true
-						// })
 
 					}
 

@@ -56,7 +56,7 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 
 func fillParamFromTags(requestObjectType reflect.Type, param *openapi3.Parameter, f reflect.StructField, location string) error {
 	nilValue := reflect.New(requestObjectType)
-	pathMethod, hasPathAnnotations := reflect.PtrTo(requestObjectType).MethodByName(fmt.Sprintf("Chipi_%s_Annotations", location))
+	pathMethod, hasPathAnnotations := reflect.PtrTo(requestObjectType).MethodByName(fmt.Sprintf("CHIPI_%s_Annotations", location))
 
 	// check for comments containing properties
 	if hasPathAnnotations {

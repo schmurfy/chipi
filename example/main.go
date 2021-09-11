@@ -59,7 +59,7 @@ func main() {
 		// 	return
 		// }
 
-		fmt.Printf("yo: %s\n", indexFile)
+		// fmt.Printf("yo: %s\n", indexFile)
 
 		// embed
 		w.Write(indexFile)
@@ -87,12 +87,13 @@ func main() {
 			panic(err)
 		}
 
-		err = api.Get(r, "/user/{Name}", &DownloadResumeRequest{})
+		err = api.Get(r, "/user/{Name}/download", &DownloadResumeRequest{})
 		if err != nil {
 			panic(err)
 		}
 
 	})
 
+	fmt.Printf("Started on 127.0.0.1:2121\n")
 	http.ListenAndServe(":2121", router)
 }
