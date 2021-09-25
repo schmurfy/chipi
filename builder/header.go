@@ -6,7 +6,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
-	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateHeadersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type) error {
@@ -23,7 +22,7 @@ func (b *Builder) generateHeadersDoc(r chi.Router, op *openapi3.Operation, reque
 	for i := 0; i < headerStructType.NumField(); i++ {
 		field := headerStructType.Field(i)
 
-		schema, err := schema.GenerateSchemaFor(b.swagger, field.Type)
+		schema, err := b.schema.GenerateSchemaFor(b.swagger, field.Type)
 		if err != nil {
 			return err
 		}

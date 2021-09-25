@@ -13,8 +13,30 @@ var (
 	_timeType = reflect.TypeOf(time.Time{})
 )
 
-func GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
+type Schema struct {
+	cache map[string]*openapi3.SchemaRef
+}
+
+func New() (*Schema, error) {
+	return &Schema{
+		cache: map[string]*openapi3.SchemaRef{},
+	}, nil
+}
+
+func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
+	cached, found := s.cache[t.String()]
+	if found {
+		return cached, nil
+	}
+
 	schema = &openapi3.SchemaRef{}
+	s.cache[t.String()] = schema
+
+	defer func() {
+		if err != nil {
+			delete(s.cache, t.String())
+		}
+	}()
 
 	// test pointed value for pointers
 	for t.Kind() == reflect.Ptr {
@@ -55,7 +77,7 @@ func GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.Schema
 			}
 
 		} else {
-			items, err = GenerateSchemaFor(doc, t.Elem())
+			items, err = s.GenerateSchemaFor(doc, t.Elem())
 			if err != nil {
 				return nil, err
 			}
@@ -87,7 +109,7 @@ func GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.Schema
 
 		// if we have an anonymous structure, inline it and stop there
 		if t.Name() == "" {
-			schema.Value, err = generateStructureSchema(doc, t)
+			schema.Value, err = s.generateStructureSchema(doc, t)
 			// return wether an error occured ot not so don't bother
 			// checking err which will be returned anyway
 			return
@@ -101,7 +123,7 @@ func GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.Schema
 		_, found := doc.Components.Schemas[t.Name()]
 		if !found {
 			var sch *openapi3.Schema
-			sch, err = generateStructureSchema(doc, t)
+			sch, err = s.generateStructureSchema(doc, t)
 			if err != nil {
 				return
 			}
@@ -120,7 +142,7 @@ func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", t.Name())
 }
 
-func generateStructureSchema(doc *openapi3.T, t reflect.Type) (*openapi3.Schema, error) {
+func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}
@@ -133,7 +155,7 @@ func generateStructureSchema(doc *openapi3.T, t reflect.Type) (*openapi3.Schema,
 			continue
 		}
 
-		fieldSchema, err := GenerateSchemaFor(doc, f.Type)
+		fieldSchema, err := s.GenerateSchemaFor(doc, f.Type)
 		if err != nil {
 			return nil, err
 		}

@@ -31,11 +31,12 @@ func TestParams(t *testing.T) {
 		var b *Builder
 
 		g.BeforeEach(func() {
+			var err error
 			router = chi.NewRouter()
 
 			router.Post("/pet/{Id}/{Name}", emptyHandler)
-			b = &Builder{} // is it really required ?
-
+			b, err = New(&openapi3.Info{})
+			require.NoError(g, err)
 		})
 
 		g.Describe("from tags", func() {

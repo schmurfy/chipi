@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
@@ -23,7 +22,7 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 		}
 
 		if typ.Kind() == reflect.Struct {
-			responseSchema, err := schema.GenerateSchemaFor(b.swagger, typ)
+			responseSchema, err := b.schema.GenerateSchemaFor(b.swagger, typ)
 			if err != nil {
 				return err
 			}

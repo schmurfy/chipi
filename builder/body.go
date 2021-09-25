@@ -4,13 +4,12 @@ import (
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateBodyDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
-		bodySchema, err := schema.GenerateSchemaFor(b.swagger, bodyField.Type)
+		bodySchema, err := b.schema.GenerateSchemaFor(b.swagger, bodyField.Type)
 		if err != nil {
 			return err
 		}

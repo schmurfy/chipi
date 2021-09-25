@@ -178,7 +178,7 @@ func TestWrapper(t *testing.T) {
 
 				require.IsType(g, &testRequest{}, vv.Interface())
 
-				assert.False(g, hasResponse)
+				assert.False(g, hasResponse.IsValid())
 
 				reqObject, ok = vv.Interface().(*testRequest)
 				require.True(g, ok)

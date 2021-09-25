@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -11,6 +12,7 @@ type Pet struct {
 	Id    int32  `json:"id"`
 	Name  string `json:"name"`
 	Count *int   `json:"count"`
+	User  *User  `json:"user"`
 }
 
 type GetPetRequest struct {
@@ -25,8 +27,9 @@ type GetPetRequest struct {
 	} `example:"/pet/5"`
 
 	Query struct {
-		Count *int  `example:"2" deprecated:"true" description:"it counts... something ?"`
-		Age   []int `example:"[1,3,4]" style:"form" explode:"false" description:"line one\nline two"`
+		Count *int     `example:"2" deprecated:"true" description:"it counts... something ?"`
+		Age   []int    `example:"[1,3,4]" style:"form" explode:"false" description:"line one\nline two"`
+		Names []string `example:"[\"a\",\"b\",\"c\"]" style:"form" explode:"false" description:"line one\nline two"`
 	}
 
 	Header struct {
@@ -43,6 +46,8 @@ func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 		Name:  "Fido",
 		Count: r.Query.Count,
 	})
+
+	fmt.Printf("names: %+v\n", r.Query.Names)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

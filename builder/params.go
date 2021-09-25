@@ -8,8 +8,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
-
-	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type, method string) error {
@@ -32,7 +30,7 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 				return errors.Errorf("wrong path struct, field %s expected", key)
 			}
 
-			schema, err := schema.GenerateSchemaFor(b.swagger, paramField.Type)
+			schema, err := b.schema.GenerateSchemaFor(b.swagger, paramField.Type)
 			if err != nil {
 				return err
 			}

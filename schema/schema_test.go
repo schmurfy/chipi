@@ -13,10 +13,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func checkGeneratedType(g *goblin.G, doc *openapi3.T, value interface{}, expected string) {
+type RecursiveGroup struct {
+	Name  string
+	Users []*RecursiveUser
+}
+
+type RecursiveUser struct {
+	Name  string
+	Group *RecursiveGroup
+}
+
+func checkGeneratedType(g *goblin.G, s **Schema, doc *openapi3.T, value interface{}, expected string) {
 	g.It(fmt.Sprintf("should generate inline type for %T", value), func() {
+		require.NotNil(g, s)
+
 		typ := reflect.TypeOf(value)
-		schema, err := GenerateSchemaFor(doc, typ)
+		schema, err := (*s).GenerateSchemaFor(doc, typ)
 		require.NoError(g, err)
 
 		data, err := json.Marshal(schema)
@@ -32,9 +44,14 @@ func TestSchema(t *testing.T) {
 
 	g.Describe("schema", func() {
 		var doc *openapi3.T
+		var s *Schema
 
 		g.BeforeEach(func() {
+			var err error
+
 			doc = &openapi3.T{}
+			s, err = New()
+			require.NoError(g, err)
 		})
 
 		g.Describe("basic types", func() {
@@ -47,7 +64,7 @@ func TestSchema(t *testing.T) {
 			}
 
 			for value, expected := range tests {
-				checkGeneratedType(g, doc, value, expected)
+				checkGeneratedType(g, &s, doc, value, expected)
 			}
 		})
 
@@ -78,7 +95,7 @@ func TestSchema(t *testing.T) {
 			}
 
 			for _, tt := range tests {
-				checkGeneratedType(g, doc, tt.Value, tt.Expected)
+				checkGeneratedType(g, &s, doc, tt.Value, tt.Expected)
 			}
 		})
 
@@ -96,7 +113,7 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate referenced type for user", func() {
 				typ := reflect.TypeOf(&User{})
-				schema, err := GenerateSchemaFor(doc, typ)
+				schema, err := s.GenerateSchemaFor(doc, typ)
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -129,6 +146,14 @@ func TestSchema(t *testing.T) {
 				}`, string(data))
 			})
 
+			g.It("should handle recursive structures", func() {
+
+				g.Timeout(5 * time.Second)
+				typ := reflect.TypeOf(&RecursiveUser{})
+				_, err := s.GenerateSchemaFor(doc, typ)
+				require.NoError(g, err)
+			})
+
 			// type UploadResumeRequest struct {
 			// 	Path struct {
 			// 		Name string `example:"john"`
@@ -147,7 +172,7 @@ func TestSchema(t *testing.T) {
 				}{}
 
 				typ := reflect.TypeOf(&st)
-				schema, err := GenerateSchemaFor(doc, typ)
+				schema, err := s.GenerateSchemaFor(doc, typ)
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -166,7 +191,7 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate referenced type for Group with link to User", func() {
 				typ := reflect.TypeOf(&Group{})
-				schema, err := GenerateSchemaFor(doc, typ)
+				schema, err := s.GenerateSchemaFor(doc, typ)
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -204,7 +229,7 @@ func TestSchema(t *testing.T) {
 				}`, string(data))
 			})
 
-			checkGeneratedType(g, doc, time.Time{}, `{
+			checkGeneratedType(g, &s, doc, time.Time{}, `{
 				"type": "string",
 				"format": "date-time"
 			}`)

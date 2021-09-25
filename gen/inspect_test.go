@@ -82,7 +82,7 @@ func TestGenerator(t *testing.T) {
 		g.Describe("GenerateAnnotations", func() {
 			g.It("should generate annotations", func() {
 				buffer := bytes.NewBufferString("")
-				err := GenerateAnnotations(buffer, f, &dst.Package{Name: "monster"})
+				err := GenerateAnnotations(buffer, f, "monster")
 				require.NoError(g, err)
 
 				// TODO: test the content

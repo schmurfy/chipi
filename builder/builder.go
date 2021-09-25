@@ -7,6 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
+	"github.com/schmurfy/chipi/schema"
 	"github.com/schmurfy/chipi/wrapper"
 )
 
@@ -16,6 +17,7 @@ type rawHandler interface {
 
 type Builder struct {
 	swagger *openapi3.T
+	schema  *schema.Schema
 }
 
 func New(infos *openapi3.Info) (*Builder, error) {
@@ -24,8 +26,14 @@ func New(infos *openapi3.Info) (*Builder, error) {
 		Info:    infos,
 	}
 
+	s, err := schema.New()
+	if err != nil {
+		return nil, err
+	}
+
 	ret := &Builder{
 		swagger: swagger,
+		schema:  s,
 	}
 
 	return ret, nil
