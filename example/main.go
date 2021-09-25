@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 
 	_ "embed"
@@ -65,11 +66,11 @@ func main() {
 		w.Write(indexFile)
 	})
 
-	router.Group(func(r chi.Router) {
+	r := router.Group(func(r chi.Router) {
 		// TODO: add options for deprecated, tags
 		err := api.Get(r, "/pet/{Id}", &GetPetRequest{})
 		if err != nil {
-			panic(err)
+			log.Fatalf("%+v", err)
 		}
 
 		err = api.Post(r, "/pet", &CreatePetRequest{})
@@ -87,12 +88,12 @@ func main() {
 			panic(err)
 		}
 
-		err = api.Get(r, "/user/{Name}/download", &DownloadResumeRequest{})
-		if err != nil {
-			panic(err)
-		}
-
 	})
+
+	err = api.Get(r, "/user/{Name}/download", &DownloadResumeRequest{})
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("Started on 127.0.0.1:2121\n")
 	http.ListenAndServe(":2121", router)

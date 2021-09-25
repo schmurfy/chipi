@@ -2,7 +2,6 @@ package wrapper
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -21,8 +20,12 @@ var (
 	_noValue = reflect.Value{}
 )
 
-type CustomBodyDecoder interface {
+type BodyDecoder interface {
 	DecodeBody(body io.ReadCloser, target interface{}) error
+}
+
+type ResponseEncoder interface {
+	EncodeResponse(out http.ResponseWriter, obj interface{})
 }
 
 type HandlerInterface interface {
@@ -106,7 +109,7 @@ func setFValue(ctx context.Context, path string, f reflect.Value, value string) 
 	return nil
 }
 
-func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Value, err error) {
+func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Value, response reflect.Value, err error) {
 	typ := reflect.TypeOf(obj)
 
 	if typ.Kind() == reflect.Ptr {
@@ -116,6 +119,7 @@ func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Va
 	rr := reflect.ValueOf(obj)
 	ret = reflect.New(typ)
 
+	// copy already set field
 	for i := 0; i < ret.Elem().NumField(); i++ {
 		f := ret.Elem().Field(i)
 		if f.CanSet() {
@@ -174,27 +178,21 @@ func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Va
 		}
 
 		// call the request method if it implements a custom decoder
-		if decoder, ok := obj.(CustomBodyDecoder); ok {
+		if decoder, ok := obj.(BodyDecoder); ok {
 			err = decoder.DecodeBody(r.Body, bodyObject)
-		} else {
-			err = defaultBodyDecoder(r.Body, bodyObject)
 		}
-
 	}
 
-	return
-}
+	response = ret.Elem().FieldByName("Response")
 
-func defaultBodyDecoder(body io.ReadCloser, target interface{}) error {
-	// otherwise use the default decoder
-	decoder := json.NewDecoder(body)
-	return decoder.Decode(&target)
+	return
 }
 
 func WrapRequest(obj interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		var vv reflect.Value
+		var response reflect.Value
 
 		ctx, span := _tracer.Start(r.Context(), "WrapRequest")
 
@@ -206,12 +204,20 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 			span.End()
 		}()
 
-		vv, err = createFilledRequestObject(r, obj)
+		vv, response, err = createFilledRequestObject(r, obj)
 		if err != nil {
 			return
 		}
 
 		var filledRequestObject HandlerInterface = vv.Interface().(HandlerInterface)
 		filledRequestObject.Handle(ctx, w)
+
+		// encode response if any
+		if response.IsValid() {
+			if encoder, ok := obj.(ResponseEncoder); ok {
+				encoder.EncodeResponse(w, response.Interface())
+			}
+		}
+
 	}
 }

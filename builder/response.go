@@ -17,8 +17,13 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 			resp.Description = &description
 		}
 
-		if responseField.Type.Kind() == reflect.Struct {
-			responseSchema, err := schema.GenerateSchemaFor(b.swagger, responseField.Type)
+		typ := responseField.Type
+		if typ.Kind() == reflect.Ptr {
+			typ = typ.Elem()
+		}
+
+		if typ.Kind() == reflect.Struct {
+			responseSchema, err := schema.GenerateSchemaFor(b.swagger, typ)
 			if err != nil {
 				return err
 			}

@@ -25,6 +25,14 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/schmurfy/chipi/gen"
+)
+
+
+var (
+	// useless but required to not get a ù$* error about unused imports
+	_ = strings.ToLower("")
+	_ = gen.RepBackticks
 )
 `
 
@@ -36,15 +44,12 @@ var tmpl = template.Must(template.New("template").Parse(`
 	{{ with $first }}
 	func (*{{.Parent}}) CHIPI_{{.Section}}_Annotations(attr string) *openapi3.Parameter {
 	{{end}}
-		repBackticks := "”"
-		backticks := "` + "`" + `"
-
 		switch attr {
 		{{ range $fields }}
 		case "{{ .Field }}":
 			return &openapi3.Parameter{
 				{{ if .HasDescription }}
-					Description: strings.ReplaceAll({{ $sep }}{{.Description}}{{ $sep }}, repBackticks, backticks),
+					Description: strings.ReplaceAll({{ $sep }}{{.Description}}{{ $sep }}, gen.RepBackticks, gen.Backticks),
 				{{ end }}
 
 				{{ if .HasExample }}

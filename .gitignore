@@ -1,5 +1,5 @@
 main
-chipi-gen
 example/example
+example/chipi-gen
 *.generated.go
 

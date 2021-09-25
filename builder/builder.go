@@ -1,13 +1,12 @@
 package builder
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
+	"github.com/pkg/errors"
 	"github.com/schmurfy/chipi/wrapper"
 )
 
@@ -53,7 +52,7 @@ func (b *Builder) AddSecurityRequirement(req openapi3.SecurityRequirement) {
 func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 	data, err := b.swagger.MarshalJSON()
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -77,6 +76,11 @@ func (b *Builder) Post(r chi.Router, pattern string, reqObject interface{}) (err
 	return
 }
 
+func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) (err error) {
+	_, err = b.Method(r, pattern, "PATCH", reqObject)
+	return
+}
+
 func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (op *openapi3.Operation, err error) {
 	op = openapi3.NewOperation()
 	// op.Description = ""...""
@@ -95,7 +99,7 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	} else if rr, ok := reqObject.(rawHandler); ok {
 		r.Method(method, pattern, http.HandlerFunc(rr.Handle))
 	} else {
-		err = fmt.Errorf("Request object must implement Handle method")
+		err = errors.Errorf("Request object must implement Handle method")
 		return
 	}
 

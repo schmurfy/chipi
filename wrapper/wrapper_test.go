@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/franela/goblin"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -173,10 +173,12 @@ func TestWrapper(t *testing.T) {
 					PrivateString: "some private string",
 				}
 
-				vv, err := createFilledRequestObject(req, m)
+				vv, hasResponse, err := createFilledRequestObject(req, m)
 				require.NoError(g, err)
 
 				require.IsType(g, &testRequest{}, vv.Interface())
+
+				assert.False(g, hasResponse)
 
 				reqObject, ok = vv.Interface().(*testRequest)
 				require.True(g, ok)

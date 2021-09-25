@@ -1,11 +1,11 @@
 package builder
 
 import (
-	"errors"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
+	"github.com/pkg/errors"
 	"github.com/schmurfy/chipi/schema"
 )
 

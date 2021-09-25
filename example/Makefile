@@ -5,5 +5,8 @@ run: build
 build: generate
 	go build -o example .
 
-generate:
-	../chipi-gen -dir .
+generate: chipi-gen
+	./chipi-gen -dir .
+
+chipi-gen:
+	go build -o chipi-gen ../chipi-gen/gen.go
