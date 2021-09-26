@@ -160,6 +160,28 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 			return nil, err
 		}
 
+		if fieldSchema.Ref != "" {
+			if tag.Nullable {
+				// nullableSchemaRef := openapi3.NewSchemaRef("", &openapi3.Schema{
+				// 	OneOf: openapi3.SchemaRefs{
+				// 		openapi3.NewSchemaRef("", &openapi3.Schema{Type: "null"}),
+				// 		fieldSchema,
+				// 	},
+				// })
+
+				// fieldSchema = nullableSchemaRef
+
+				fieldSchema.Value = openapi3.NewSchema()
+				fieldSchema.Value.Nullable = tag.Nullable
+			}
+
+			// fmt.Printf("wtf: %s.%s (%s)\n", t.Name(), f.Name, fieldSchema.Ref)
+			// fieldSchema.Value = openapi3.NewSchema()
+		} else {
+			fieldSchema.Value.ReadOnly = tag.ReadOnly
+			fieldSchema.Value.Nullable = tag.Nullable
+		}
+
 		ret.WithPropertyRef(tag.Name, fieldSchema)
 	}
 
@@ -172,9 +194,13 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 }
 
 type jsonTag struct {
-	OmitEmpty bool
-	Name      string
-	Ignored   bool
+	OmitEmpty  bool
+	ReadOnly   bool
+	WriteOnly  bool
+	Nullable   bool
+	Name       string
+	Ignored    bool
+	Deprecated bool
 }
 
 func parseJsonTag(f reflect.StructField) *jsonTag {
@@ -182,8 +208,7 @@ func parseJsonTag(f reflect.StructField) *jsonTag {
 		Name: f.Name,
 	}
 
-	tag, found := f.Tag.Lookup("json")
-	if found {
+	if tag, found := f.Tag.Lookup("json"); found {
 		values := strings.Split(tag, ",")
 		for _, value := range values {
 			switch value {
@@ -193,6 +218,24 @@ func parseJsonTag(f reflect.StructField) *jsonTag {
 				ret.OmitEmpty = true
 			default:
 				ret.Name = value
+			}
+		}
+	}
+
+	if tag, found := f.Tag.Lookup("chipi"); found {
+		values := strings.Split(tag, ",")
+		for _, value := range values {
+			switch value {
+			case "ignore":
+				ret.Ignored = true
+			case "readonly":
+				ret.ReadOnly = true
+			case "writeonly":
+				ret.WriteOnly = true
+			case "nullable":
+				ret.Nullable = true
+			case "deprecated":
+				ret.Deprecated = true
 			}
 		}
 	}

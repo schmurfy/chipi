@@ -16,6 +16,11 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 			resp.Description = &description
 		}
 
+		contentType, hasContentType := responseField.Tag.Lookup("content-type")
+		if !hasContentType {
+			contentType = "application/json"
+		}
+
 		typ := responseField.Type
 		if typ.Kind() == reflect.Ptr {
 			typ = typ.Elem()
@@ -27,7 +32,11 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 				return err
 			}
 
-			resp.Content = openapi3.NewContentWithJSONSchemaRef(responseSchema)
+			resp.Content = openapi3.Content{
+				contentType: &openapi3.MediaType{
+					Schema: responseSchema,
+				},
+			}
 		}
 
 		op.Responses = make(openapi3.Responses)

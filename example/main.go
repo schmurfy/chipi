@@ -27,15 +27,27 @@ func main() {
 		URL: "http://127.0.0.1:2121",
 	})
 
-	api.AddSecurityRequirement(openapi3.SecurityRequirement{
-		"api_key": []string{},
+	api.AddServer(&openapi3.Server{
+		URL: "http://127.0.0.1:2122",
 	})
 
-	api.AddSecurityScheme("api_key", &openapi3.SecurityScheme{
-		Type:         "http",
-		Scheme:       "bearer",
-		BearerFormat: "JWT",
-		In:           "header",
+	// https://spec.openapis.org/oas/latest.html#security-scheme-object
+	// api.AddSecurityRequirement(openapi3.SecurityRequirement{
+	// 	"api_key": []string{},
+	// 	"basic":   []string{},
+	// })
+
+	// api.AddSecurityScheme("api_key", &openapi3.SecurityScheme{
+	// 	Type:         "http",
+	// 	Scheme:       "bearer",
+	// 	BearerFormat: "JWT",
+	// 	In:           "header",
+	// })
+
+	api.AddSecurityScheme("basic", &openapi3.SecurityScheme{
+		Type:   "http",
+		Scheme: "basic",
+		In:     "header",
 	})
 
 	if err != nil {
@@ -46,7 +58,6 @@ func main() {
 	router.Use(cors.AllowAll().Handler)
 
 	router.Get("/doc.json", api.ServeSchema)
-
 	router.Get("/doc", func(w http.ResponseWriter, r *http.Request) {
 		// f, err := os.Open("index.html")
 		// if err != nil {

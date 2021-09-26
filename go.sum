@@ -11,6 +11,8 @@ github.com/franela/goblin v0.0.0-20210113153425-413781f5e6c8 h1:QVPknD9yAYAmmmER
 github.com/franela/goblin v0.0.0-20210113153425-413781f5e6c8/go.mod h1:VzmDKDJVZI3aJmnRI9VjAn9nJ8qPPsN1fqzr9dqInIo=
 github.com/getkin/kin-openapi v0.61.0 h1:6awGqF5nG5zkVpMsAih1QH4VgzS8phTxECUWIFo7zko=
 github.com/getkin/kin-openapi v0.61.0/go.mod h1:7Yn5whZr5kJi6t+kShccXS8ae1APpYTW6yheSwk8Yi4=
+github.com/getkin/kin-openapi v0.76.0 h1:j77zg3Ec+k+r+GA3d8hBoXpAc6KX9TbBPrwQGBIy2sY=
+github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-chi/chi/v5 v5.0.4 h1:5e494iHzsYBiyXQAHHuI4tyJS9M3V84OuX3ufIIGHFo=

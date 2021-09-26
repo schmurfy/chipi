@@ -9,10 +9,12 @@ import (
 )
 
 type Pet struct {
-	Id    int32  `json:"id"`
-	Name  string `json:"name"`
-	Count *int   `json:"count"`
-	User  *User  `json:"user"`
+	Id           int32  `json:"id"`
+	Name         string `json:"name"`
+	Count        *int   `json:"count"`
+	User         *User  `json:"user" chipi:"nullable"`
+	ReadOnly     int    `json:"red_only" chipi:"readonly"`
+	IgnoreString string `chipi:"ignore"`
 }
 
 type GetPetRequest struct {

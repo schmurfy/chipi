@@ -27,6 +27,27 @@ func TestResponse(t *testing.T) {
 			op = openapi3.NewOperation()
 		})
 
+		g.It("should allow custom content-type", func() {
+			req := struct {
+				Response struct {
+					Name string
+				} `content-type:"application/pdf"`
+			}{}
+
+			err := b.generateResponseDocumentation(op, reflect.TypeOf(req))
+			require.NoError(g, err)
+
+			resp, found := op.Responses["200"]
+			require.True(g, found)
+
+			mediaType := resp.Value.Content.Get("application/json")
+			require.Nil(g, mediaType)
+
+			mediaType = resp.Value.Content.Get("application/pdf")
+			require.NotNil(g, mediaType)
+
+		})
+
 		g.It("should handle json response", func() {
 			req := struct {
 				Response struct {

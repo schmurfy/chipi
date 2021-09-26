@@ -44,11 +44,27 @@ if err != nil {
 - `Response` is also optional and define what is returned when eveything works well
 
 
-## Supported OpenAPI (v3) attributes
+## Supported OpenAPI (v3.1) attributes
+
+### Structures
+
+Special tags can be used on structure's fields to set specific behaviors:
+
+- ignored: the field will not show at all, triggered by:
+  - `json:"-"`
+  - `chipi:"ignore"`
+- read only: field only valid on read
+  - `chipi:"readonly"`
+- write only: field only valid on write
+  - `chipi:"writeonly"`
+- nullable: the field can be set to `null`
+  - `chipi:"nullable"`
+- deprecated
+  - `chipi:"deprecated"`
 
 ### Path
 
-[reference](https://swagger.io/specification/#parameter-object)
+[reference](https://spec.openapis.org/oas/v3.1.0.html#parameter-object)
 
 - description [comment,tag]
 - example [comment,tag]
@@ -58,19 +74,19 @@ if err != nil {
 
 ### Query
 
-[reference](https://swagger.io/specification/#parameter-object)
+[reference](https://spec.openapis.org/oas/v3.1.0.html#parameter-object)
 
 ( same as path parameters )
 
 ### Header
 
-[reference](https://swagger.io/specification/#header-object)
+[reference](https://spec.openapis.org/oas/v3.1.0.html#parameter-object)
 
 ( same as path parameters )
 
 ### Body
 
-[reference](https://swagger.io/specification/#body-object)
+[reference](https://spec.openapis.org/oas/v3.1.0.html#request-body-object)
 
 - description [comment,tag]
 - required [tag]
@@ -78,9 +94,10 @@ if err != nil {
 
 ### Response
 
-[reference](https://swagger.io/specification/#response-object)
+[reference](https://spec.openapis.org/oas/v3.1.0.html#response-object)
 
 - description [comment,tag]
+- content-type [tag]
 
 ## Caveats
 
