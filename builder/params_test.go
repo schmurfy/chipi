@@ -15,7 +15,7 @@ import (
 type testPathRequest struct {
 	Path struct {
 		Id   int
-		Name string `example:"Ralph" description:"some text" deprecated:"true" style:"tarzan" explode:"true"`
+		Name string `example:"Ralph" description:"some text" style:"tarzan" explode:"true" chipi:"deprecated"`
 	} `example:"/pet/43/Fido"`
 }
 
@@ -66,6 +66,11 @@ func TestParams(t *testing.T) {
 
 				g.It("should extract [deprecated]", func() {
 					assert.Equal(g, false, param.Deprecated)
+				})
+
+				// params are always required
+				g.It("should extract [required]", func() {
+					assert.Equal(g, true, param.Required)
 				})
 
 				g.It("should extract [style]", func() {

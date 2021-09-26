@@ -3,7 +3,6 @@ package schema
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -149,9 +148,9 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		tag := parseJsonTag(f)
+		tag := ParseJsonTag(f)
 
-		if tag.Ignored {
+		if (tag.Ignored != nil) && *tag.Ignored {
 			continue
 		}
 
@@ -161,7 +160,7 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 		}
 
 		if fieldSchema.Ref != "" {
-			if tag.Nullable {
+			if (tag.Nullable != nil) && *tag.Nullable {
 				// nullableSchemaRef := openapi3.NewSchemaRef("", &openapi3.Schema{
 				// 	OneOf: openapi3.SchemaRefs{
 				// 		openapi3.NewSchemaRef("", &openapi3.Schema{Type: "null"}),
@@ -172,14 +171,20 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 				// fieldSchema = nullableSchemaRef
 
 				fieldSchema.Value = openapi3.NewSchema()
-				fieldSchema.Value.Nullable = tag.Nullable
+				fieldSchema.Value.Nullable = *tag.Nullable
 			}
 
 			// fmt.Printf("wtf: %s.%s (%s)\n", t.Name(), f.Name, fieldSchema.Ref)
 			// fieldSchema.Value = openapi3.NewSchema()
 		} else {
-			fieldSchema.Value.ReadOnly = tag.ReadOnly
-			fieldSchema.Value.Nullable = tag.Nullable
+			if (tag.ReadOnly != nil) && *tag.ReadOnly {
+				fieldSchema.Value.ReadOnly = *tag.ReadOnly
+			}
+
+			if (tag.Nullable != nil) && *tag.Nullable {
+				fieldSchema.Value.Nullable = *tag.Nullable
+			}
+
 		}
 
 		ret.WithPropertyRef(tag.Name, fieldSchema)
@@ -191,54 +196,4 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 	}
 
 	return ret, nil
-}
-
-type jsonTag struct {
-	OmitEmpty  bool
-	ReadOnly   bool
-	WriteOnly  bool
-	Nullable   bool
-	Name       string
-	Ignored    bool
-	Deprecated bool
-}
-
-func parseJsonTag(f reflect.StructField) *jsonTag {
-	ret := &jsonTag{
-		Name: f.Name,
-	}
-
-	if tag, found := f.Tag.Lookup("json"); found {
-		values := strings.Split(tag, ",")
-		for _, value := range values {
-			switch value {
-			case "-":
-				ret.Ignored = true
-			case "omitempty":
-				ret.OmitEmpty = true
-			default:
-				ret.Name = value
-			}
-		}
-	}
-
-	if tag, found := f.Tag.Lookup("chipi"); found {
-		values := strings.Split(tag, ",")
-		for _, value := range values {
-			switch value {
-			case "ignore":
-				ret.Ignored = true
-			case "readonly":
-				ret.ReadOnly = true
-			case "writeonly":
-				ret.WriteOnly = true
-			case "nullable":
-				ret.Nullable = true
-			case "deprecated":
-				ret.Deprecated = true
-			}
-		}
-	}
-
-	return ret
 }

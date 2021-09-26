@@ -68,31 +68,33 @@ Special tags can be used on structure's fields to set specific behaviors:
 
 [reference](https://spec.openapis.org/oas/v3.1.0.html#parameter-object)
 
-- description [comment,tag]
 - example [comment,tag]
-- deprecated [tag]
+- description [comment,tag]
 - style [tag]
 - explode [tag]
+- deprecated [chipi-tag]
 
 ### Query
 
 [reference](https://spec.openapis.org/oas/v3.1.0.html#parameter-object)
 
 ( same as path parameters )
+- required [chipi-tag]
 
 ### Header
 
 [reference](https://spec.openapis.org/oas/v3.1.0.html#parameter-object)
 
 ( same as path parameters )
+- required [chipi-tag]
 
 ### Body
 
 [reference](https://spec.openapis.org/oas/v3.1.0.html#request-body-object)
 
-- description [comment,tag]
-- required [tag]
 - content-type [tag]
+- description [comment,tag]
+- required [chipi-tag]
 
 ### Response
 

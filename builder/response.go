@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
@@ -11,9 +12,10 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 	if found {
 		resp := openapi3.NewResponse()
 
-		description, found := responseField.Tag.Lookup("description")
-		if found {
-			resp.Description = &description
+		tag := schema.ParseJsonTag(responseField)
+
+		if tag.Description != nil {
+			resp.Description = tag.Description
 		}
 
 		contentType, hasContentType := responseField.Tag.Lookup("content-type")

@@ -8,6 +8,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
+	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type, method string) error {
@@ -74,6 +75,8 @@ func fillParamFromTags(requestObjectType reflect.Type, param *openapi3.Parameter
 		}
 	}
 
+	tag := schema.ParseJsonTag(f)
+
 	if val, found := f.Tag.Lookup("example"); found {
 		if f.Type.Kind() == reflect.Slice {
 			ex := reflect.New(f.Type).Interface()
@@ -88,21 +91,24 @@ func fillParamFromTags(requestObjectType reflect.Type, param *openapi3.Parameter
 		}
 	}
 
-	if val, found := f.Tag.Lookup("description"); found {
-		param.Description = val
+	if tag.Description != nil {
+		param.Description = *tag.Description
 	}
 
-	if val, found := f.Tag.Lookup("deprecated"); found {
-		param.Deprecated = (val == "true")
+	if tag.Style != nil {
+		param.Style = *tag.Style
 	}
 
-	if val, found := f.Tag.Lookup("style"); found {
-		param.Style = val
+	if tag.Explode != nil {
+		param.Explode = tag.Explode
 	}
 
-	if val, found := f.Tag.Lookup("explode"); found {
-		b := (val == "true")
-		param.Explode = &b
+	if tag.Deprecated != nil {
+		param.Deprecated = *tag.Deprecated
+	}
+
+	if tag.Required != nil {
+		param.Required = *tag.Required
 	}
 
 	return nil

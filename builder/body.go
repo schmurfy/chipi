@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/schmurfy/chipi/schema"
 )
 
 func (b *Builder) generateBodyDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
@@ -28,12 +29,14 @@ func (b *Builder) generateBodyDocumentation(op *openapi3.Operation, requestObjec
 			},
 		}
 
-		if val, found := bodyField.Tag.Lookup("description"); found {
-			body.Description = val
+		tag := schema.ParseJsonTag(bodyField)
+
+		if tag.Description != nil {
+			body.Description = *tag.Description
 		}
 
-		if val, found := bodyField.Tag.Lookup("required"); found {
-			body.Required = (val == "true")
+		if tag.Required != nil {
+			body.Required = *tag.Required
 		}
 
 		op.RequestBody = bodyRef

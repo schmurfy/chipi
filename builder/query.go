@@ -22,13 +22,13 @@ func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operatio
 	for i := 0; i < queryStructType.NumField(); i++ {
 		field := queryStructType.Field(i)
 
-		schema, err := b.schema.GenerateSchemaFor(b.swagger, field.Type)
+		fieldSchema, err := b.schema.GenerateSchemaFor(b.swagger, field.Type)
 		if err != nil {
 			return err
 		}
 
 		param := openapi3.NewQueryParameter(field.Name).
-			WithSchema(schema.Value)
+			WithSchema(fieldSchema.Value)
 
 		err = fillParamFromTags(requestObjectType, param, field, "Query")
 		if err != nil {

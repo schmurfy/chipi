@@ -29,9 +29,10 @@ type GetPetRequest struct {
 	} `example:"/pet/5"`
 
 	Query struct {
-		Count *int     `example:"2" deprecated:"true" description:"it counts... something ?"`
-		Age   []int    `example:"[1,3,4]" style:"form" explode:"false" description:"line one\nline two"`
-		Names []string `example:"[\"a\",\"b\",\"c\"]" style:"form" explode:"false" description:"line one\nline two"`
+		Count    *int     `example:"2" description:"it counts... something ?"`
+		Age      []int    `example:"[1,3,4]" style:"form" explode:"false" description:"line one\nline two" chipi:"required"`
+		Names    []string `example:"[\"a\",\"b\",\"c\"]" style:"form" explode:"false" description:"line one\nline two"`
+		OldField string   `chipi:"deprecated"`
 	}
 
 	Header struct {
