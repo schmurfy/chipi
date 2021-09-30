@@ -93,6 +93,11 @@ func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) (er
 	return
 }
 
+func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) (err error) {
+	_, err = b.Method(r, pattern, "DELETE", reqObject)
+	return
+}
+
 func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (op *openapi3.Operation, err error) {
 	op = openapi3.NewOperation()
 
