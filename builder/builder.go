@@ -22,7 +22,7 @@ type Builder struct {
 
 func New(infos *openapi3.Info) (*Builder, error) {
 	swagger := &openapi3.T{
-		OpenAPI: "3.0.0",
+		OpenAPI: "3.1.0",
 		Info:    infos,
 	}
 
@@ -37,6 +37,10 @@ func New(infos *openapi3.Info) (*Builder, error) {
 	}
 
 	return ret, nil
+}
+
+func (b *Builder) AddTag(tag *openapi3.Tag) {
+	b.swagger.Tags = append(b.swagger.Tags, tag)
 }
 
 func (b *Builder) AddServer(server *openapi3.Server) {
@@ -91,7 +95,6 @@ func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) (er
 
 func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (op *openapi3.Operation, err error) {
 	op = openapi3.NewOperation()
-	// op.Description = ""...""
 
 	// analyze parameters if any
 	typ := reflect.TypeOf(reqObject)
@@ -108,6 +111,11 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		r.Method(method, pattern, http.HandlerFunc(rr.Handle))
 	} else {
 		err = errors.Errorf("Request object must implement Handle method")
+		return
+	}
+
+	err = b.generateOperationDoc(r, op, typ)
+	if err != nil {
 		return
 	}
 

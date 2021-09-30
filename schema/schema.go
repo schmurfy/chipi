@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -23,6 +24,11 @@ func New() (*Schema, error) {
 }
 
 func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
+	// return s.generateSchemaFor(doc, t, 1)
+	return s.generateSchemaFor(doc, t, 0)
+}
+
+func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel int) (schema *openapi3.SchemaRef, err error) {
 	cached, found := s.cache[t.String()]
 	if found {
 		return cached, nil
@@ -76,9 +82,13 @@ func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *ope
 			}
 
 		} else {
-			items, err = s.GenerateSchemaFor(doc, t.Elem())
+			items, err = s.generateSchemaFor(doc, t.Elem(), 0)
 			if err != nil {
 				return nil, err
+			}
+
+			if items == nil {
+				return nil, errors.New("invalid schema")
 			}
 
 			schema.Value = &openapi3.Schema{
@@ -89,15 +99,18 @@ func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *ope
 		}
 
 	case reflect.Map:
-		// schema.Type = "object"
-		// additionalProperties, err := g.generateSchemaRefFor(parents, t.Elem())
-		// if err != nil {
-		// 	return nil, err
-		// }
+		additionalProperties, err := s.generateSchemaFor(doc, t.Elem(), 0)
+		if err != nil {
+			return nil, err
+		}
 		// if additionalProperties != nil {
 		// 	g.SchemaRefs[additionalProperties]++
-		// 	schema.AdditionalProperties = additionalProperties
 		// }
+
+		schema.Value = &openapi3.Schema{
+			Type:                 "object",
+			AdditionalProperties: additionalProperties,
+		}
 
 	// struct schemas should be stored as components
 	case reflect.Struct:
@@ -107,9 +120,9 @@ func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *ope
 		}
 
 		// if we have an anonymous structure, inline it and stop there
-		if t.Name() == "" {
-			schema.Value, err = s.generateStructureSchema(doc, t)
-			// return wether an error occured ot not so don't bother
+		if (t.Name() == "") || (inlineLevel > 0) {
+			schema.Value, err = s.generateStructureSchema(doc, t, inlineLevel)
+			// return wether an error occurred ot not so don't bother
 			// checking err which will be returned anyway
 			return
 		}
@@ -122,7 +135,7 @@ func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *ope
 		_, found := doc.Components.Schemas[t.Name()]
 		if !found {
 			var sch *openapi3.Schema
-			sch, err = s.generateStructureSchema(doc, t)
+			sch, err = s.generateStructureSchema(doc, t, inlineLevel)
 			if err != nil {
 				return
 			}
@@ -141,7 +154,7 @@ func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", t.Name())
 }
 
-func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*openapi3.Schema, error) {
+func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, inlineLevel int) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}
@@ -154,7 +167,7 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 			continue
 		}
 
-		fieldSchema, err := s.GenerateSchemaFor(doc, f.Type)
+		fieldSchema, err := s.generateSchemaFor(doc, f.Type, inlineLevel-1)
 		if err != nil {
 			return nil, err
 		}
@@ -183,6 +196,10 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type) (*open
 
 			if (tag.Nullable != nil) && *tag.Nullable {
 				fieldSchema.Value.Nullable = *tag.Nullable
+			}
+
+			if (tag.Deprecated != nil) && *tag.Deprecated {
+				fieldSchema.Value.Deprecated = *tag.Deprecated
 			}
 
 		}

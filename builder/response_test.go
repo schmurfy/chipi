@@ -78,7 +78,7 @@ func TestResponse(t *testing.T) {
 				}`, string(data))
 		})
 
-		g.It("should handle binary reponse", func() {
+		g.It("should handle binary response", func() {
 			req := struct {
 				Response []byte `description:"the requested file"`
 			}{}

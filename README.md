@@ -1,5 +1,5 @@
 [![codecov](https://codecov.io/gh/schmurfy/chipi/branch/master/graph/badge.svg?token=A6413R1ZXH)](https://codecov.io/gh/schmurfy/chipi)
-
+[![Go Report Card](https://goreportcard.com/badge/github.com/schmurfy/chipi)](https://goreportcard.com/report/github.com/schmurfy/chipi)
 
 After being frustrated multiple times about the lack of easy way to generate an openapi doc directly from
 the code I created this library as an experiment and it went way further than I expected.

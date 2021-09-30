@@ -14,8 +14,7 @@ func inspectStructures(f *dst.File, cb inspectFunc) error {
 
 					// we found a struct
 					if st, ok := tt.Type.(*dst.StructType); ok {
-
-						err := inspectRequestStructure(tt, st, cb)
+						err := inspectRequestStructure(decl, tt, st, cb)
 						if err != nil {
 							return err
 						}
@@ -31,7 +30,28 @@ func inspectStructures(f *dst.File, cb inspectFunc) error {
 
 // inspect each sub structures and invoke the callback whenever a
 // comment is found
-func inspectRequestStructure(parentTypeSpec *dst.TypeSpec, parentStruct *dst.StructType, cb inspectFunc) error {
+func inspectRequestStructure(decl *dst.GenDecl, parentTypeSpec *dst.TypeSpec, parentStruct *dst.StructType, cb inspectFunc) error {
+	// inspect structure comments if any
+	structDecorations := decl.Decorations().Start
+	if len(structDecorations) > 0 {
+		commentData, err := parseComment(structDecorations)
+		if err != nil {
+			return err
+		}
+
+		err = cb(
+			parentTypeSpec.Name.String(),
+			"Operation",
+			"",
+			commentData,
+		)
+
+		if err != nil {
+			return err
+		}
+
+	}
+
 	// we are inspecting the top level request structure
 	// (ex: GetPetRequest)
 	// look for sub structures fields (ex: Header, Body, Query)

@@ -5,6 +5,14 @@ type Monster struct {
 	Name string `json:"name"`
 }
 
+// @tag
+// monster
+//
+// @summary
+// Grab a monster and bring it to you
+// knowing its Id
+//
+// @deprecated
 type GetMonsterRequest struct {
 	Path struct {
 		// @description

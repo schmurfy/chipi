@@ -8,5 +8,6 @@ build: generate
 generate: chipi-gen
 	./chipi-gen -dir .
 
+.PHONY: chipi-gen
 chipi-gen:
 	go build -o chipi-gen ../chipi-gen/gen.go

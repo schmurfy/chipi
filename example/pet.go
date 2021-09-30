@@ -12,11 +12,18 @@ type Pet struct {
 	Id           int32  `json:"id"`
 	Name         string `json:"name"`
 	Count        *int   `json:"count"`
-	User         *User  `json:"user" chipi:"nullable"`
+	User         *User  `json:"user" chipi:"nullable,deprecated"`
 	ReadOnly     int    `json:"red_only" chipi:"readonly"`
 	IgnoreString string `chipi:"ignore"`
 }
 
+// @tag
+// toto
+//
+// @summary
+// fetch a pet
+//
+// @deprecated
 type GetPetRequest struct {
 	Path struct {
 		// @description

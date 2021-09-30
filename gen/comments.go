@@ -21,10 +21,11 @@ func parseComment(lines []string) (map[string]string, error) {
 
 			if strings.HasPrefix(matches[1], "@") {
 				if key != "" {
-					ret[key] = value
+					ret[key] = trim(value)
 				}
 
 				key = strings.TrimLeft(matches[1], "@")
+				ret[key] = ""
 				value = ""
 
 			} else {
@@ -34,8 +35,12 @@ func parseComment(lines []string) (map[string]string, error) {
 	}
 
 	if value != "" {
-		ret[key] = value
+		ret[key] = trim(value)
 	}
 
 	return ret, nil
+}
+
+func trim(s string) string {
+	return strings.TrimRight(s, " \t\n")
 }

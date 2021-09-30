@@ -16,14 +16,14 @@ import (
 
 func data(desc string) map[string]string {
 	return map[string]string{
-		"description": desc + "\n",
+		"description": desc,
 	}
 }
 
 func dataex(desc string, ex string) map[string]string {
 	return map[string]string{
-		"description": desc + "\n",
-		"example":     ex + "\n",
+		"description": desc,
+		"example":     ex,
 	}
 }
 
@@ -55,6 +55,11 @@ func TestGenerator(t *testing.T) {
 					field   string
 					data    map[string]string
 				}{
+					{"GetMonsterRequest", "Operation", "", map[string]string{
+						"tag":        "monster",
+						"deprecated": "",
+						"summary":    "Grab a monster and bring it to you\nknowing its Id",
+					}},
 					{"GetMonsterRequest", "Path", "Id", data("The _Id_ of the monster you want to\nfetch")},
 					{"GetMonsterRequest", "Query", "", data("the query")},
 					{"GetMonsterRequest", "Query", "Blocking", dataex("If true the request will block until\nthe monster was actually created", "ahhhhhh !")},
@@ -82,7 +87,7 @@ func TestGenerator(t *testing.T) {
 		g.Describe("GenerateAnnotations", func() {
 			g.It("should generate annotations", func() {
 				buffer := bytes.NewBufferString("")
-				err := GenerateAnnotations(buffer, f, "monster")
+				err := GenerateFieldAnnotations(buffer, f, "monster")
 				require.NoError(g, err)
 
 				// TODO: test the content
