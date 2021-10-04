@@ -16,6 +16,7 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/go-chi/chi/v5"
+	"github.com/schmurfy/chipi/response"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,17 +37,15 @@ func (r *sharedDecoder) DecodeBody(body io.ReadCloser, target interface{}) error
 
 type createTestUser struct {
 	sharedDecoder
+	response.ErrorEncoder
+
 	Path struct{}
 	Body *someData
 }
 
-func (r *createTestUser) Handle(ctx context.Context, w http.ResponseWriter) {
+func (r *createTestUser) Handle(ctx context.Context, w http.ResponseWriter) error {
 	encoder := json.NewEncoder(w)
-	err := encoder.Encode(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	return encoder.Encode(r.Body)
 }
 
 func TestWrapper(t *testing.T) {

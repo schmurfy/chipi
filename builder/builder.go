@@ -116,7 +116,7 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	} else if rr, ok := reqObject.(rawHandler); ok {
 		r.Method(method, pattern, http.HandlerFunc(rr.Handle))
 	} else {
-		err = errors.Errorf("Request object must implement Handle method")
+		err = errors.Errorf("%T object must implement HandlerInterface interface", reqObject)
 		return
 	}
 

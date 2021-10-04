@@ -74,6 +74,10 @@ func inspectRequestStructure(decl *dst.GenDecl, parentTypeSpec *dst.TypeSpec, pa
 	// (ex: GetPetRequest)
 	// look for sub structures fields (ex: Header, Body, Query, Response)
 	for _, sectionField := range parentStruct.Fields.List {
+		if len(sectionField.Names) == 0 {
+			continue
+		}
+
 		fieldName := sectionField.Names[0].Name
 		if !isValidField(fieldName) {
 			continue

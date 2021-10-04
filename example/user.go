@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"github.com/schmurfy/chipi/response"
 )
 
 type User struct {
@@ -16,6 +18,9 @@ type User struct {
 // @summary
 // get a user
 type GetUserRequest struct {
+	response.ErrorEncoder
+	response.JsonEncoder
+
 	Path struct {
 		// @description
 		// # some title
@@ -37,24 +42,22 @@ type GetUserRequest struct {
 	Response User
 }
 
-func (r *GetUserRequest) Handle(ctx context.Context, w http.ResponseWriter) {
+func (r *GetUserRequest) Handle(ctx context.Context, w http.ResponseWriter) error {
 	encoder := json.NewEncoder(w)
-	err := encoder.Encode(&User{
+	return encoder.Encode(&User{
 		Name: r.Path.Name,
 		Pets: []Pet{
 			{Id: 3, Name: "Rex"},
 		},
 	})
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 }
 
 // @summary
 // upload user's resume)
 type UploadResumeRequest struct {
+	response.ErrorEncoder
+	response.JsonEncoder
+
 	Path struct {
 		Name string `example:"john"`
 	} `example:"/user/john"`
@@ -70,13 +73,16 @@ type UploadResumeRequest struct {
 	Response struct{}
 }
 
-func (r *UploadResumeRequest) Handle(ctx context.Context, w http.ResponseWriter) {
-
+func (r *UploadResumeRequest) Handle(ctx context.Context, w http.ResponseWriter) error {
+	return nil
 }
 
 // @summary
 // download user's resume
 type DownloadResumeRequest struct {
+	response.ErrorEncoder
+	response.JsonEncoder
+
 	Path struct {
 		Name string `example:"john"`
 	} `example:"/user/john/download"`
@@ -88,15 +94,12 @@ type DownloadResumeRequest struct {
 	Response []byte `description:"the user resume, maybe ?"`
 }
 
-func (r *DownloadResumeRequest) Handle(ctx context.Context, w http.ResponseWriter) {
+func (r *DownloadResumeRequest) Handle(ctx context.Context, w http.ResponseWriter) error {
 	data := []byte("some data")
 	reader := bytes.NewReader(data)
 
 	w.Header().Set("Content-Type", "image/jpeg")
 
 	_, err := io.Copy(w, reader)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	return err
 }

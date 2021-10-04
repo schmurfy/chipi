@@ -30,7 +30,8 @@ type ResponseEncoder interface {
 }
 
 type HandlerInterface interface {
-	Handle(context.Context, http.ResponseWriter)
+	Handle(context.Context, http.ResponseWriter) error
+	HandleError(context.Context, http.ResponseWriter, error)
 }
 
 func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
@@ -209,7 +210,6 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 		defer func() {
 			if err != nil {
 				span.RecordError(err)
-				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
 			span.End()
 		}()
@@ -220,10 +220,11 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 		}
 
 		var filledRequestObject HandlerInterface = vv.Interface().(HandlerInterface)
-		filledRequestObject.Handle(ctx, w)
-
-		// encode response if any
-		if response.IsValid() {
+		err = filledRequestObject.Handle(ctx, w)
+		if err != nil {
+			filledRequestObject.HandleError(ctx, w, err)
+		} else if response.IsValid() {
+			// encode response if any
 			if encoder, ok := obj.(ResponseEncoder); ok {
 				encoder.EncodeResponse(w, response.Interface())
 			}

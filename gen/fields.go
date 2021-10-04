@@ -80,8 +80,12 @@ func GenerateFieldAnnotations(w io.Writer, f *dst.File, pkgName string) error {
 				cf.Description = strings.ReplaceAll(v, "`", repBackticks)
 			case "example":
 				cf.Example = strings.ReplaceAll(v, "`", repBackticks)
+			case "":
+				// don't freak out if this is just a comment
+				// with no properties
+
 			default:
-				return fmt.Errorf("unknown property %s", k)
+				return fmt.Errorf("unknown property %q", k)
 			}
 		}
 

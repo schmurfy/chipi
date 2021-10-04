@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/schmurfy/chipi/response"
 )
 
 type Pet struct {
@@ -30,6 +32,9 @@ type Location struct {
 //
 // @deprecated
 type GetPetRequest struct {
+	response.ErrorEncoder
+	response.JsonEncoder
+
 	Path struct {
 		// @description
 		// Id is so great !
@@ -68,7 +73,7 @@ type GetPetRequest struct {
 	Response Pet
 }
 
-func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
+func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) error {
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(&Pet{
 		Id:    r.Path.Id,
@@ -79,15 +84,15 @@ func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 	fmt.Printf("names: %+v\n", r.Query.Names)
 	fmt.Printf("location: %+v\n", r.Query.Location)
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	return err
 }
 
 // @summary
 // add a new pet
 type CreatePetRequest struct {
+	response.ErrorEncoder
+	response.JsonEncoder
+
 	// @description
 	// this is a wonderful path with
 	// a lot of things inside, really a great path !
@@ -115,12 +120,7 @@ func (r *CreatePetRequest) DecodeBody(body io.ReadCloser, target interface{}) er
 	return nil
 }
 
-func (r *CreatePetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
+func (r *CreatePetRequest) Handle(ctx context.Context, w http.ResponseWriter) error {
 	encoder := json.NewEncoder(w)
-	err := encoder.Encode(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	return encoder.Encode(r.Body)
 }
