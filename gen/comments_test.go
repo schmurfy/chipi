@@ -22,7 +22,7 @@ func TestComments(t *testing.T) {
 			ret, err := parseComment(lines)
 			require.NoError(g, err)
 
-			assert.Equal(g, "this is a wonderful path with\na lot of things inside, really a great path !\n", ret["description"])
+			assert.Equal(g, "this is a wonderful path with\na lot of things inside, really a great path !", ret["description"])
 		})
 
 		g.It("should parse block comments")

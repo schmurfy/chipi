@@ -2,9 +2,9 @@ package gen
 
 import (
 	"fmt"
-	"html/template"
 	"io"
 	"strings"
+	"text/template"
 
 	"github.com/dave/dst"
 )

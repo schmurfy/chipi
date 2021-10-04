@@ -27,8 +27,19 @@ func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operatio
 			return err
 		}
 
-		param := openapi3.NewQueryParameter(field.Name).
-			WithSchema(fieldSchema.Value)
+		param := openapi3.NewQueryParameter(field.Name)
+
+		if (fieldSchema.Ref != "") || (fieldSchema.Value.Type == "object") {
+			// we need to wrap the schema
+			param.Content = openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: fieldSchema,
+				},
+			}
+		} else {
+			// just add the schema directly for basic types
+			param = param.WithSchema(fieldSchema.Value)
+		}
 
 		err = fillParamFromTags(requestObjectType, param, field, "Query")
 		if err != nil {

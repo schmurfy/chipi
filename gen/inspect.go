@@ -4,6 +4,10 @@ import (
 	"github.com/dave/dst"
 )
 
+var (
+	validFields = []string{"Path", "Query", "Header", "Body", "Response"}
+)
+
 type inspectFunc func(parentStructName string, sectionName string, fieldName string, data map[string]string) error
 
 func inspectStructures(f *dst.File, cb inspectFunc) error {
@@ -26,6 +30,20 @@ func inspectStructures(f *dst.File, cb inspectFunc) error {
 	}
 
 	return nil
+}
+
+func isValidField(name string) bool {
+	for _, s := range validFields {
+		if s == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+func inspectOwnComments() {
+
 }
 
 // inspect each sub structures and invoke the callback whenever a
@@ -54,30 +72,39 @@ func inspectRequestStructure(decl *dst.GenDecl, parentTypeSpec *dst.TypeSpec, pa
 
 	// we are inspecting the top level request structure
 	// (ex: GetPetRequest)
-	// look for sub structures fields (ex: Header, Body, Query)
+	// look for sub structures fields (ex: Header, Body, Query, Response)
 	for _, sectionField := range parentStruct.Fields.List {
-		if sectionStruct, ok := sectionField.Type.(*dst.StructType); ok {
+		fieldName := sectionField.Names[0].Name
+		if !isValidField(fieldName) {
+			continue
+		}
 
-			// the section struct might have comments too
-			startDecoration := sectionField.Decorations().Start
-			if len(startDecoration) > 0 {
-				commentData, err := parseComment(startDecoration)
-				if err != nil {
-					return err
-				}
+		// Response *Pet
+		// dst.StarExpr
+		// dst.Ident
 
-				err = cb(
-					parentTypeSpec.Name.String(),
-					sectionField.Names[0].String(),
-					"",
-					commentData,
-				)
-
-				if err != nil {
-					return err
-				}
-
+		// the section struct might have comments too
+		startDecoration := sectionField.Decorations().Start
+		if len(startDecoration) > 0 {
+			commentData, err := parseComment(startDecoration)
+			if err != nil {
+				return err
 			}
+
+			err = cb(
+				parentTypeSpec.Name.String(),
+				sectionField.Names[0].String(),
+				"",
+				commentData,
+			)
+
+			if err != nil {
+				return err
+			}
+
+		}
+
+		if sectionStruct, ok := sectionField.Type.(*dst.StructType); ok {
 
 			// we got one we need to inspect each field (ex: Id, Count)
 			for _, sectionStructField := range sectionStruct.Fields.List {
@@ -94,13 +121,6 @@ func inspectRequestStructure(decl *dst.GenDecl, parentTypeSpec *dst.TypeSpec, pa
 						sectionStructField.Names[0].String(),
 						commentData,
 					)
-
-					// fmt.Printf("%s :: %s :: %s :: %v\n",
-					// 	parentTypeSpec.Name,
-					// 	sectionField.Names[0],
-					// 	sectionStructField.Names[0],
-					// 	commentData,
-					// )
 
 					if err != nil {
 						return err

@@ -17,10 +17,17 @@ import (
 //go:embed index.html
 var indexFile []byte
 
+//go:embed redoc.html
+var redocFile []byte
+
 func main() {
 	api, err := chipi.New(&openapi3.Info{
 		Title:       "test api",
 		Description: "a great api",
+		License: &openapi3.License{
+			Name: "MIT",
+			URL:  "https://raw.githubusercontent.com/schmurfy/chipi/master/LICENSE",
+		},
 	})
 
 	api.AddServer(&openapi3.Server{
@@ -58,6 +65,11 @@ func main() {
 	router.Use(cors.AllowAll().Handler)
 
 	router.Get("/doc.json", api.ServeSchema)
+
+	router.Get("/redoc", func(w http.ResponseWriter, r *http.Request) {
+		w.Write(redocFile)
+	})
+
 	router.Get("/doc", func(w http.ResponseWriter, r *http.Request) {
 		// f, err := os.Open("index.html")
 		// if err != nil {

@@ -23,12 +23,16 @@ type RecursiveUser struct {
 	Group *RecursiveGroup
 }
 
-func checkGeneratedType(g *goblin.G, s **Schema, doc *openapi3.T, value interface{}, expected string) {
+func checkGeneratedType(g *goblin.G, schemaPtr **Schema, docPtr **openapi3.T, value interface{}, expected string) {
 	g.It(fmt.Sprintf("should generate inline type for %T", value), func() {
+		s := *schemaPtr
+		doc := *docPtr
+
+		require.NotNil(g, doc)
 		require.NotNil(g, s)
 
 		typ := reflect.TypeOf(value)
-		schema, err := (*s).GenerateSchemaFor(doc, typ)
+		schema, err := s.GenerateSchemaFor(doc, typ)
 		require.NoError(g, err)
 
 		data, err := json.Marshal(schema)
@@ -64,7 +68,7 @@ func TestSchema(t *testing.T) {
 			}
 
 			for value, expected := range tests {
-				checkGeneratedType(g, &s, doc, value, expected)
+				checkGeneratedType(g, &s, &doc, value, expected)
 			}
 		})
 
@@ -95,7 +99,7 @@ func TestSchema(t *testing.T) {
 			}
 
 			for _, tt := range tests {
-				checkGeneratedType(g, &s, doc, tt.Value, tt.Expected)
+				checkGeneratedType(g, &s, &doc, tt.Value, tt.Expected)
 			}
 		})
 
@@ -229,7 +233,7 @@ func TestSchema(t *testing.T) {
 				}`, string(data))
 			})
 
-			checkGeneratedType(g, &s, doc, time.Time{}, `{
+			checkGeneratedType(g, &s, &doc, time.Time{}, `{
 				"type": "string",
 				"format": "date-time"
 			}`)

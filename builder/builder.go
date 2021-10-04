@@ -109,6 +109,7 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	}
 
 	typ = typ.Elem()
+	op.OperationID = typ.Name()
 
 	if _, ok := reqObject.(wrapper.HandlerInterface); ok {
 		r.Method(method, pattern, wrapper.WrapRequest(reqObject))

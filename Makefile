@@ -6,7 +6,6 @@ ifneq "$(TEST_FOCUS)" ""
 	filter := $(filter) -goblin.run='$(TEST_FOCUS)'
 endif
 
-
 build:
 	go build -o chipi-gen ./bin/gen.go
 
@@ -34,3 +33,5 @@ watch:
 example: build
 	cd example && make run
 
+validate-example:
+	npx @redocly/openapi-cli lint http://127.0.0.1:2121/doc.json

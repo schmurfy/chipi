@@ -55,6 +55,10 @@ func TestWrapper(t *testing.T) {
 	g.Describe("Wrapper", func() {
 
 		g.Describe("setFieldValue", func() {
+			type loc struct {
+				Type string
+			}
+
 			type st struct {
 				Int    int
 				IntPtr *int
@@ -81,6 +85,9 @@ func TestWrapper(t *testing.T) {
 
 				Bool    bool
 				BoolPtr *bool
+
+				Loc    loc
+				LocPtr *loc
 			}
 			ctx := context.Background()
 
@@ -110,6 +117,9 @@ func TestWrapper(t *testing.T) {
 
 				{"Str", "a few words", "a few words"},
 				{"Bool", "true", true},
+
+				{"LocPtr", `{"Type": "toto"}`, loc{Type: "toto"}},
+				{"Loc", `{"Type": "titi"}`, loc{Type: "titi"}},
 			}
 
 			for _, tt := range tests {

@@ -13,6 +13,8 @@ type User struct {
 	Pets []Pet  `json:"pets"`
 }
 
+// @summary
+// get a user
 type GetUserRequest struct {
 	Path struct {
 		// @description
@@ -30,6 +32,8 @@ type GetUserRequest struct {
 
 	Query struct{}
 
+	// @description
+	// the returned user
 	Response User
 }
 
@@ -48,6 +52,8 @@ func (r *GetUserRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 	}
 }
 
+// @summary
+// upload user's resume)
 type UploadResumeRequest struct {
 	Path struct {
 		Name string `example:"john"`
@@ -58,12 +64,18 @@ type UploadResumeRequest struct {
 		File1 []byte
 		File2 []byte
 	} `content-type:"multipart/form-data"`
+
+	// @description
+	// returns nothing
+	Response struct{}
 }
 
 func (r *UploadResumeRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 
 }
 
+// @summary
+// download user's resume
 type DownloadResumeRequest struct {
 	Path struct {
 		Name string `example:"john"`
@@ -71,6 +83,8 @@ type DownloadResumeRequest struct {
 
 	Query struct{}
 
+	// @description
+	// the resume
 	Response []byte `description:"the user resume, maybe ?"`
 }
 

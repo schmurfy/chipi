@@ -8,15 +8,11 @@ import (
 )
 
 func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
+	responses := make(openapi3.Responses)
+
 	responseField, found := requestObjectType.FieldByName("Response")
 	if found {
 		resp := openapi3.NewResponse()
-
-		tag := schema.ParseJsonTag(responseField)
-
-		if tag.Description != nil {
-			resp.Description = tag.Description
-		}
 
 		contentType, hasContentType := responseField.Tag.Lookup("content-type")
 		if !hasContentType {
@@ -26,6 +22,11 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 		typ := responseField.Type
 		if typ.Kind() == reflect.Ptr {
 			typ = typ.Elem()
+		}
+
+		err := fillResponseFromTags(requestObjectType, resp, responseField)
+		if err != nil {
+			return err
 		}
 
 		if typ.Kind() == reflect.Struct {
@@ -41,10 +42,40 @@ func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestO
 			}
 		}
 
-		op.Responses = make(openapi3.Responses)
-		op.Responses["200"] = &openapi3.ResponseRef{
+		responses["200"] = &openapi3.ResponseRef{
 			Value: resp,
 		}
+	} else {
+		// generate a dummy 200 OK response
+		responses["200"] = nil
+	}
+
+	op.Responses = responses
+
+	return nil
+}
+
+func fillResponseFromTags(requestObjectType reflect.Type, resp *openapi3.Response, f reflect.StructField) error {
+	nilValue := reflect.New(requestObjectType)
+
+	opMethod, hasOperationAnnotations := reflect.PtrTo(requestObjectType).MethodByName("CHIPI_Response_Annotations")
+	if hasOperationAnnotations {
+		ret := opMethod.Func.Call([]reflect.Value{
+			nilValue,
+			reflect.ValueOf(""),
+		})
+
+		if p, ok := ret[0].Interface().(*openapi3.Parameter); ok && (p != nil) {
+			if p.Description != "" {
+				resp.Description = &p.Description
+			}
+		}
+	}
+
+	tag := schema.ParseJsonTag(f)
+
+	if tag.Description != nil {
+		resp.Description = tag.Description
 	}
 
 	return nil

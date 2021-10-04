@@ -43,5 +43,7 @@ type GetMonsterRequest struct {
 		Something string
 	}
 
+	// @description
+	// what is returned
 	Response Monster
 }

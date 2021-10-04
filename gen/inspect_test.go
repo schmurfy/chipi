@@ -65,6 +65,7 @@ func TestGenerator(t *testing.T) {
 					{"GetMonsterRequest", "Query", "Blocking", dataex("If true the request will block until\nthe monster was actually created", "ahhhhhh !")},
 					{"GetMonsterRequest", "Header", "ApiKey", data("The _ApiKey_ is required to\ncheck for authorization")},
 					{"GetMonsterRequest", "Header", "Something", data("This may be important")},
+					{"GetMonsterRequest", "Response", "", data("what is returned")},
 				}
 
 				inspectStructures(f, func(parentStructName string, sectionName string, fieldName string, data map[string]string) error {
@@ -80,6 +81,8 @@ func TestGenerator(t *testing.T) {
 					pos++
 					return nil
 				})
+
+				assert.Equal(g, 7, pos)
 
 			})
 		})

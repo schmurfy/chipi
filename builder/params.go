@@ -53,7 +53,26 @@ func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, re
 	return nil
 }
 
+func prepareExample(t reflect.Type, val string) (interface{}, error) {
+	var ex interface{}
+
+	switch t.Kind() {
+	case reflect.Slice, reflect.Struct, reflect.Map:
+		ex = reflect.New(t).Interface()
+		err := json.Unmarshal([]byte(val), &ex)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+	default:
+		ex = val
+	}
+
+	return ex, nil
+}
+
 func fillParamFromTags(requestObjectType reflect.Type, param *openapi3.Parameter, f reflect.StructField, location string) error {
+	var err error
 	nilValue := reflect.New(requestObjectType)
 	pathMethod, hasPathAnnotations := reflect.PtrTo(requestObjectType).MethodByName(fmt.Sprintf("CHIPI_%s_Annotations", location))
 
@@ -70,7 +89,11 @@ func fillParamFromTags(requestObjectType reflect.Type, param *openapi3.Parameter
 			}
 
 			if p.Example != nil {
-				param.Example = p.Example
+				param.Example, err = prepareExample(f.Type, p.Example.(string))
+				if err != nil {
+					return err
+				}
+
 			}
 		}
 	}
@@ -78,16 +101,9 @@ func fillParamFromTags(requestObjectType reflect.Type, param *openapi3.Parameter
 	tag := schema.ParseJsonTag(f)
 
 	if val, found := f.Tag.Lookup("example"); found {
-		if f.Type.Kind() == reflect.Slice {
-			ex := reflect.New(f.Type).Interface()
-
-			err := json.Unmarshal([]byte(val), &ex)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			param.Example = ex
-		} else {
-			param.Example = val
+		param.Example, err = prepareExample(f.Type, val)
+		if err != nil {
+			return err
 		}
 	}
 

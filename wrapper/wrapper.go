@@ -2,6 +2,7 @@ package wrapper
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -56,6 +57,15 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 			setValue = reflect.Append(setValue, vv)
 		}
 		return setValue, nil
+
+	case reflect.Struct:
+		setValue := reflect.New(fieldType)
+		iface := setValue.Interface()
+		err := json.Unmarshal([]byte(value), &iface)
+		if err != nil {
+			return _noValue, err
+		}
+		return setValue.Elem(), nil
 
 	case reflect.String:
 		return reflect.ValueOf(value).Convert(fieldType), nil

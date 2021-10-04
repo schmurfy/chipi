@@ -17,6 +17,11 @@ type Pet struct {
 	IgnoreString string `chipi:"ignore"`
 }
 
+type Location struct {
+	Type        string
+	Coordinates []float64
+}
+
 // @tag
 // toto
 //
@@ -40,12 +45,26 @@ type GetPetRequest struct {
 		Age      []int    `example:"[1,3,4]" style:"form" explode:"false" description:"line one\nline two" chipi:"required"`
 		Names    []string `example:"[\"a\",\"b\",\"c\"]" style:"form" explode:"false" description:"line one\nline two"`
 		OldField string   `chipi:"deprecated"`
+
+		// @example
+		// {"type": "point", "coordinates": [0.2, 9.0]}
+		//
+		// @description
+		// # first
+		// the location near the pet
+		// ## second
+		// some list of things:
+		// - one
+		// - two
+		Location *Location
 	}
 
 	Header struct {
 		ApiKey string
 	}
 
+	// @description
+	// the returned pet
 	Response Pet
 }
 
@@ -58,6 +77,7 @@ func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 	})
 
 	fmt.Printf("names: %+v\n", r.Query.Names)
+	fmt.Printf("location: %+v\n", r.Query.Location)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -65,6 +85,8 @@ func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) {
 	}
 }
 
+// @summary
+// add a new pet
 type CreatePetRequest struct {
 	// @description
 	// this is a wonderful path with
@@ -78,7 +100,10 @@ type CreatePetRequest struct {
 	another line
 	and more !
 	*/
-	Body     *Pet
+	Body *Pet
+
+	// @description
+	// the returned pet
 	Response Pet
 }
 

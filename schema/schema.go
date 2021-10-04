@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -14,13 +13,10 @@ var (
 )
 
 type Schema struct {
-	cache map[string]*openapi3.SchemaRef
 }
 
 func New() (*Schema, error) {
-	return &Schema{
-		cache: map[string]*openapi3.SchemaRef{},
-	}, nil
+	return &Schema{}, nil
 }
 
 func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
@@ -29,19 +25,14 @@ func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *ope
 }
 
 func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel int) (schema *openapi3.SchemaRef, err error) {
-	cached, found := s.cache[t.String()]
-	if found {
-		return cached, nil
+	if doc.Components.Schemas != nil {
+		cached, found := doc.Components.Schemas[t.Name()]
+		if found {
+			return cached, nil
+		}
 	}
 
 	schema = &openapi3.SchemaRef{}
-	s.cache[t.String()] = schema
-
-	defer func() {
-		if err != nil {
-			delete(s.cache, t.String())
-		}
-	}()
 
 	// test pointed value for pointers
 	for t.Kind() == reflect.Ptr {
@@ -87,9 +78,11 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 				return nil, err
 			}
 
-			if items == nil {
-				return nil, errors.New("invalid schema")
-			}
+			// if (items.Ref == "") && (items.Value == nil) {
+			// 	return nil, errors.Errorf("invalid schema for %s", t.Elem().String())
+			// }
+
+			// fmt.Printf("items: %+v\n", items)
 
 			schema.Value = &openapi3.Schema{
 				Type:  "array",
@@ -103,9 +96,6 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 		if err != nil {
 			return nil, err
 		}
-		// if additionalProperties != nil {
-		// 	g.SchemaRefs[additionalProperties]++
-		// }
 
 		schema.Value = &openapi3.Schema{
 			Type:                 "object",
@@ -119,6 +109,10 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 			return
 		}
 
+		if doc.Components.Schemas == nil {
+			doc.Components.Schemas = make(openapi3.Schemas)
+		}
+
 		// if we have an anonymous structure, inline it and stop there
 		if (t.Name() == "") || (inlineLevel > 0) {
 			schema.Value, err = s.generateStructureSchema(doc, t, inlineLevel)
@@ -127,21 +121,20 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 			return
 		}
 
-		if doc.Components.Schemas == nil {
-			doc.Components.Schemas = make(openapi3.Schemas)
-		}
-
 		// check if the structure already exists as component first
 		_, found := doc.Components.Schemas[t.Name()]
 		if !found {
-			var sch *openapi3.Schema
-			sch, err = s.generateStructureSchema(doc, t, inlineLevel)
+			ref := &openapi3.SchemaRef{}
+
+			// forward declaration of the current type to handle recursion properly
+			doc.Components.Schemas[t.Name()] = ref
+
+			// fmt.Printf("%s - BEFORE: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
+			ref.Value, err = s.generateStructureSchema(doc, t, inlineLevel)
 			if err != nil {
 				return
 			}
-
-			// register the schema
-			doc.Components.Schemas[t.Name()] = &openapi3.SchemaRef{Value: sch}
+			// fmt.Printf("%s - AFTER: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 		}
 
 		schema.Ref = structReference(t)
@@ -190,17 +183,13 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, inline
 			// fmt.Printf("wtf: %s.%s (%s)\n", t.Name(), f.Name, fieldSchema.Ref)
 			// fieldSchema.Value = openapi3.NewSchema()
 		} else {
-			if (tag.ReadOnly != nil) && *tag.ReadOnly {
-				fieldSchema.Value.ReadOnly = *tag.ReadOnly
-			}
+			fieldSchema.Value.ReadOnly = (tag.ReadOnly != nil) && *tag.ReadOnly
+			fieldSchema.Value.Nullable = (tag.Nullable != nil) && *tag.Nullable
+			fieldSchema.Value.Deprecated = (tag.Deprecated != nil) && *tag.Deprecated
 
-			if (tag.Nullable != nil) && *tag.Nullable {
-				fieldSchema.Value.Nullable = *tag.Nullable
-			}
-
-			if (tag.Deprecated != nil) && *tag.Deprecated {
-				fieldSchema.Value.Deprecated = *tag.Deprecated
-			}
+			// if f.Name == "Coordinates" {
+			// 	fmt.Printf("[DD] %s.%s : %+v\n", t.Name(), f.Name, tag)
+			// }
 
 		}
 
