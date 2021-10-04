@@ -25,7 +25,7 @@ type Location struct {
 }
 
 // @tag
-// toto
+// pets
 //
 // @summary
 // fetch a pet
