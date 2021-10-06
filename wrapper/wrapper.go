@@ -161,7 +161,8 @@ func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Va
 	queryValue := ret.Elem().FieldByName("Query")
 	if queryValue.IsValid() {
 		for k, v := range r.URL.Query() {
-			f := queryValue.FieldByName(k)
+			attributeName := strings.Title(k)
+			f := queryValue.FieldByName(attributeName)
 			if f.IsValid() {
 				err = setFValue(ctx,
 					"request.query."+f.Type().Name(),

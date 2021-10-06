@@ -68,6 +68,10 @@ func GenerateFieldAnnotations(w io.Writer, f *dst.File, pkgName string) error {
 			group[key] = []commentedField{}
 		}
 
+		if sectionName == "Query" {
+			fieldName = strings.ToLower(fieldName)
+		}
+
 		cf := commentedField{
 			Parent:  parentStructName,
 			Section: sectionName,

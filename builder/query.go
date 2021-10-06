@@ -2,6 +2,7 @@ package builder
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -27,7 +28,7 @@ func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operatio
 			return err
 		}
 
-		param := openapi3.NewQueryParameter(field.Name)
+		param := openapi3.NewQueryParameter(strings.ToLower(field.Name))
 
 		if (fieldSchema.Ref != "") || (fieldSchema.Value.Type == "object") {
 			// we need to wrap the schema

@@ -49,9 +49,9 @@ func TestQueryParams(t *testing.T) {
 			g.Describe("Name", func() {
 				var param *openapi3.Parameter
 				g.BeforeEach(func() {
-					param = op.Parameters.GetByInAndName("query", "Name")
+					param = op.Parameters.GetByInAndName("query", "name")
 					require.NotNil(g, param)
-					require.Equal(g, "Name", param.Name)
+					require.Equal(g, "name", param.Name)
 				})
 
 				g.It("should extract [required]", func() {

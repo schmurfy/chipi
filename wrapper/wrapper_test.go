@@ -175,7 +175,7 @@ func TestWrapper(t *testing.T) {
 
 				// query
 				query := req.URL.Query()
-				query.Set("Count", "2")
+				query.Set("count", "2")
 				req.URL.RawQuery = query.Encode()
 
 				m := &testRequest{
