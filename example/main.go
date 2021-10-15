@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -21,7 +23,9 @@ var indexFile []byte
 var redocFile []byte
 
 func main() {
-	api, err := chipi.New(&openapi3.Info{
+	router := chi.NewRouter()
+
+	api, err := chipi.New(router, &openapi3.Info{
 		Title:       "test api",
 		Description: "a great api",
 		License: &openapi3.License{
@@ -60,43 +64,41 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	router := chi.NewRouter()
-
 	router.Use(cors.AllowAll().Handler)
 
 	router.Get("/doc.json", api.ServeSchema)
+	router.Get("/doc2.json", func(w http.ResponseWriter, r *http.Request) {
+		f, err := os.Open("/tmp/doc.json")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		defer f.Close()
+
+		io.Copy(w, f)
+	})
 
 	router.Get("/redoc", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(redocFile)
 	})
 
 	router.Get("/doc", func(w http.ResponseWriter, r *http.Request) {
-		// f, err := os.Open("index.html")
-		// if err != nil {
-		// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-		// 	return
-		// }
-
-		// _, err = io.Copy(w, f)
-		// if err != nil {
-		// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-		// 	return
-		// }
-
-		// fmt.Printf("yo: %s\n", indexFile)
-
 		// embed
 		w.Write(indexFile)
 	})
 
 	r := router.Group(func(r chi.Router) {
-		// TODO: add options for deprecated, tags
-		err := api.Get(r, "/pet/{Id}", &GetPetRequest{})
+
+		petRouter := chi.NewRouter()
+		r.Mount("/pet", petRouter)
+
+		err := api.Get(petRouter, "/{Id}", &GetPetRequest{})
 		if err != nil {
 			log.Fatalf("%+v", err)
 		}
 
-		err = api.Post(r, "/pet", &CreatePetRequest{})
+		err = api.Post(petRouter, "/", &CreatePetRequest{})
 		if err != nil {
 			panic(err)
 		}

@@ -11,43 +11,37 @@ import (
 	"github.com/schmurfy/chipi/schema"
 )
 
-func (b *Builder) generateParametersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type, method string) error {
+func (b *Builder) generateParametersDoc(op *openapi3.Operation, requestObjectType reflect.Type, method string, routeContext *chi.Context) error {
 	pathField, found := requestObjectType.FieldByName("Path")
 	if !found {
 		return errors.New("wrong struct, Path field expected")
 	}
 
-	example, found := pathField.Tag.Lookup("example")
-	if !found {
-		return errors.New("missing tag `example`")
-	}
-
-	tctx := chi.NewRouteContext()
-	if r.Match(tctx, method, example) {
-		for _, key := range tctx.URLParams.Keys {
-			// pathStruct must contain all defined keys
-			paramField, found := pathField.Type.FieldByName(key)
-			if !found {
-				return errors.Errorf("wrong path struct, field %s expected", key)
-			}
-
-			schema, err := b.schema.GenerateSchemaFor(b.swagger, paramField.Type)
-			if err != nil {
-				return err
-			}
-
-			param := openapi3.NewPathParameter(key).
-				WithSchema(schema.Value)
-
-			err = fillParamFromTags(requestObjectType, param, paramField, "Path")
-			if err != nil {
-				return err
-			}
-
-			op.AddParameter(param)
+	for _, key := range routeContext.URLParams.Keys {
+		if key == "*" {
+			continue
 		}
-	} else {
-		return errors.Errorf("failed to match route: %s", example)
+
+		// pathStruct must contain all defined keys
+		paramField, found := pathField.Type.FieldByName(key)
+		if !found {
+			return errors.Errorf("wrong path struct, field %s expected", key)
+		}
+
+		schema, err := b.schema.GenerateSchemaFor(b.swagger, paramField.Type)
+		if err != nil {
+			return err
+		}
+
+		param := openapi3.NewPathParameter(key).
+			WithSchema(schema.Value)
+
+		err = fillParamFromTags(requestObjectType, param, paramField, "Path")
+		if err != nil {
+			return err
+		}
+
+		op.AddParameter(param)
 	}
 
 	return nil

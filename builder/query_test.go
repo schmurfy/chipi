@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -31,7 +30,7 @@ func TestQueryParams(t *testing.T) {
 			router = chi.NewRouter()
 
 			router.Get("/pet", emptyHandler)
-			b, err = New(&openapi3.Info{})
+			b, err = New(router, &openapi3.Info{})
 			require.NoError(g, err)
 		})
 
@@ -42,8 +41,6 @@ func TestQueryParams(t *testing.T) {
 				tt := reflect.TypeOf(testQueryRequest{})
 				err := b.generateQueryParametersDoc(router, &op, tt)
 				require.NoError(g, err)
-
-				fmt.Printf("op: %+v\n", op)
 			})
 
 			g.Describe("Name", func() {

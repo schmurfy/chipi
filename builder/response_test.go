@@ -7,6 +7,7 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +22,8 @@ func TestResponse(t *testing.T) {
 		g.BeforeEach(func() {
 			var err error
 
-			b, err = New(&openapi3.Info{})
+			router := chi.NewRouter()
+			b, err = New(router, &openapi3.Info{})
 			require.NoError(g, err)
 
 			op = openapi3.NewOperation()

@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -18,9 +19,10 @@ type rawHandler interface {
 type Builder struct {
 	swagger *openapi3.T
 	schema  *schema.Schema
+	router  *chi.Mux
 }
 
-func New(infos *openapi3.Info) (*Builder, error) {
+func New(r *chi.Mux, infos *openapi3.Info) (*Builder, error) {
 	swagger := &openapi3.T{
 		OpenAPI: "3.1.0",
 		Info:    infos,
@@ -34,6 +36,7 @@ func New(infos *openapi3.Info) (*Builder, error) {
 	ret := &Builder{
 		swagger: swagger,
 		schema:  s,
+		router:  r,
 	}
 
 	return ret, nil
@@ -98,6 +101,32 @@ func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) (e
 	return
 }
 
+func (b *Builder) findRoute(typ reflect.Type, method string) *chi.Context {
+	pathField, found := typ.FieldByName("Path")
+	if !found {
+		return nil
+	}
+
+	routeExample, found := pathField.Tag.Lookup("example")
+	if !found {
+		return nil
+	}
+
+	tctx := chi.NewRouteContext()
+	if b.router.Match(tctx, method, routeExample) {
+		return tctx
+	} else {
+		fmt.Printf("failed to match %s %q\n", method, routeExample)
+		chi.Walk(b.router, func(method, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+			fmt.Printf("  [ROUTE] %s %q\n", method, route)
+			return nil
+		})
+
+	}
+
+	return nil
+}
+
 func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (op *openapi3.Operation, err error) {
 	op = openapi3.NewOperation()
 
@@ -120,13 +149,18 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		return
 	}
 
+	routeContext := b.findRoute(typ, method)
+	if routeContext == nil {
+		return nil, errors.Errorf("failed to match route: %v", typ)
+	}
+
 	err = b.generateOperationDoc(r, op, typ)
 	if err != nil {
 		return
 	}
 
 	// URL Parameters
-	err = b.generateParametersDoc(r, op, typ, method)
+	err = b.generateParametersDoc(op, typ, method, routeContext)
 	if err != nil {
 		return
 	}
@@ -155,6 +189,6 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		return
 	}
 
-	b.swagger.AddOperation(pattern, method, op)
+	b.swagger.AddOperation(routeContext.RoutePattern(), method, op)
 	return
 }
