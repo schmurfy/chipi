@@ -182,7 +182,8 @@ func TestWrapper(t *testing.T) {
 					PrivateString: "some private string",
 				}
 
-				vv, hasResponse, err := createFilledRequestObject(req, m)
+				parsingErrors := map[string]string{}
+				vv, hasResponse, err := createFilledRequestObject(req, m, parsingErrors)
 				require.NoError(g, err)
 
 				require.IsType(g, &testRequest{}, vv.Interface())

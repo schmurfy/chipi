@@ -3,6 +3,7 @@ package wrapper
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -120,7 +121,7 @@ func setFValue(ctx context.Context, path string, f reflect.Value, value string) 
 	return nil
 }
 
-func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Value, response reflect.Value, err error) {
+func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors map[string]string) (ret reflect.Value, response reflect.Value, err error) {
 	typ := reflect.TypeOf(obj)
 
 	if typ.Kind() == reflect.Ptr {
@@ -140,19 +141,23 @@ func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Va
 
 	ctx := r.Context()
 
+	hasParamsErrors := false
+
 	// path
 	pathValue := ret.Elem().FieldByName("Path")
 	rctx := chi.RouteContext(r.Context())
 	for _, k := range rctx.URLParams.Keys {
 		fieldValue := pathValue.FieldByName(k)
 		if fieldValue.IsValid() {
+			path := "request.path." + k
 			err = setFValue(ctx,
-				"request.path."+fieldValue.Type().Name(),
+				path,
 				fieldValue,
 				rctx.URLParam(k),
 			)
 			if err != nil {
-				return
+				parsingErrors[path] = err.Error()
+				hasParamsErrors = true
 			}
 		}
 	}
@@ -164,17 +169,24 @@ func createFilledRequestObject(r *http.Request, obj interface{}) (ret reflect.Va
 			attributeName := strings.Title(k)
 			f := queryValue.FieldByName(attributeName)
 			if f.IsValid() {
+				path := "request.query." + attributeName
 				err = setFValue(ctx,
-					"request.query."+f.Type().Name(),
+					path,
 					f,
 					v[0],
 				)
 
 				if err != nil {
-					return
+					parsingErrors[path] = err.Error()
+					hasParamsErrors = true
 				}
 			}
 		}
+	}
+
+	if hasParamsErrors {
+		err = errors.New("input parsing error")
+		return
 	}
 
 	// body
@@ -215,8 +227,15 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 			span.End()
 		}()
 
-		vv, response, err = createFilledRequestObject(r, obj)
+		parsingErrors := map[string]string{}
+
+		vv, response, err = createFilledRequestObject(r, obj, parsingErrors)
 		if err != nil {
+			data, err := json.Marshal(parsingErrors)
+			if err != nil {
+				data = []byte(`{}`)
+			}
+			http.Error(w, string(data), http.StatusBadRequest)
 			return
 		}
 
