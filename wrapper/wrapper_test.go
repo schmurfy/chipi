@@ -110,6 +110,7 @@ func TestWrapper(t *testing.T) {
 				{"Uint64", strconv.FormatUint(math.MaxUint64, 10), uint64(math.MaxUint64)},
 
 				{"ArrString", "a,b,toto", []string{"a", "b", "toto"}},
+				{"ArrString", "[a,b,toto]", []string{"a", "b", "toto"}},
 				{"ArrUint", "3,567,900", []uint{3, 567, 900}},
 
 				{"Float32", "3.1415927", float32(3.1415927)},

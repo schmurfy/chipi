@@ -48,7 +48,9 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 		return setValuePtr, nil
 
 	case reflect.Slice:
-		param := strings.Split(value, ",")
+		param := strings.Split(
+			strings.Trim(value, "[]"),
+			",")
 		sliceType := fieldType.Elem()
 		setValue := reflect.New(reflect.SliceOf(sliceType)).Elem()
 		for _, v := range param {
