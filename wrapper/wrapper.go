@@ -49,7 +49,7 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 
 	case reflect.Slice:
 		param := strings.Split(
-			strings.Trim(value, "[]"),
+			strings.Trim(value, `[]`),
 			",")
 		sliceType := fieldType.Elem()
 		setValue := reflect.New(reflect.SliceOf(sliceType)).Elem()
@@ -72,7 +72,9 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 		return setValue.Elem(), nil
 
 	case reflect.String:
-		return reflect.ValueOf(value).Convert(fieldType), nil
+		return reflect.ValueOf(
+			strings.Trim(value, `"`),
+		).Convert(fieldType), nil
 
 	case reflect.Bool:
 		setValue, err := strconv.ParseBool(value)
