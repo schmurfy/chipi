@@ -25,8 +25,10 @@ func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *ope
 }
 
 func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel int) (schema *openapi3.SchemaRef, err error) {
+	fullName := typeName(t)
+
 	if doc.Components.Schemas != nil {
-		cached, found := doc.Components.Schemas[t.Name()]
+		cached, found := doc.Components.Schemas[fullName]
 		if found {
 			return cached, nil
 		}
@@ -122,12 +124,12 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 		}
 
 		// check if the structure already exists as component first
-		_, found := doc.Components.Schemas[t.Name()]
+		_, found := doc.Components.Schemas[fullName]
 		if !found {
 			ref := &openapi3.SchemaRef{}
 
 			// forward declaration of the current type to handle recursion properly
-			doc.Components.Schemas[t.Name()] = ref
+			doc.Components.Schemas[fullName] = ref
 
 			// fmt.Printf("%s - BEFORE: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 			ref.Value, err = s.generateStructureSchema(doc, t, inlineLevel)
@@ -138,13 +140,23 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 		}
 
 		schema.Ref = structReference(t)
+
+	default:
+		return nil, fmt.Errorf("unknwon type: %v", t.Kind())
 	}
 
 	return
 }
 
+func typeName(t reflect.Type) string {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.String()
+}
+
 func structReference(t reflect.Type) string {
-	return fmt.Sprintf("#/components/schemas/%s", t.Name())
+	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
 func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, inlineLevel int) (*openapi3.Schema, error) {

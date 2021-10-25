@@ -47,3 +47,8 @@ type GetMonsterRequest struct {
 	// what is returned
 	Response Monster
 }
+
+type QueryResponse struct {
+	// Monsters []Monster
+	MonstersCount int
+}

@@ -37,7 +37,7 @@ func TestGenerator(t *testing.T) {
 		g.BeforeEach(func() {
 			var err error
 
-			data, err := ioutil.ReadFile("../testdata/monster/monster.go")
+			data, err := ioutil.ReadFile("../internal/testdata/monster/monster.go")
 			require.NoError(g, err)
 
 			fs = token.NewFileSet()

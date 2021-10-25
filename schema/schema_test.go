@@ -11,6 +11,9 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/schmurfy/chipi/internal/testdata/monster"
+	"github.com/schmurfy/chipi/internal/testdata/pet"
 )
 
 type RecursiveGroup struct {
@@ -103,6 +106,26 @@ func TestSchema(t *testing.T) {
 			}
 		})
 
+		g.Describe("different packages", func() {
+			g.It("should generate correct reference path", func() {
+				typ1 := reflect.TypeOf(monster.QueryResponse{})
+				path := structReference(typ1)
+				assert.Equal(g, "#/components/schemas/monster.QueryResponse", path)
+			})
+
+			g.It("should generate correct types for same structure name", func() {
+				typ1 := reflect.TypeOf(&monster.QueryResponse{})
+				schema1, err := s.GenerateSchemaFor(doc, typ1)
+				require.NoError(g, err)
+
+				typ2 := reflect.TypeOf(&pet.QueryResponse{})
+				schema2, err := s.GenerateSchemaFor(doc, typ2)
+				require.NoError(g, err)
+
+				assert.NotEqual(g, schema1.Ref, schema2.Ref)
+			})
+		})
+
 		g.Describe("structures", func() {
 			type User struct {
 				Name    string `json:"name,omitempty"`
@@ -125,12 +148,11 @@ func TestSchema(t *testing.T) {
 
 				// check returned schema
 				assert.JSONEq(g, `{
-					"$ref": "#/components/schemas/User"
+					"$ref": "#/components/schemas/schema.User"
 				}`, string(data))
 
 				// check that the User schema was added as component
-
-				userSchema, found := doc.Components.Schemas["User"]
+				userSchema, found := doc.Components.Schemas[typeName(typ.Elem())]
 				require.True(g, found)
 
 				data, err = json.Marshal(userSchema)
@@ -203,15 +225,15 @@ func TestSchema(t *testing.T) {
 
 				// check returned schema
 				assert.JSONEq(g, `{
-					"$ref": "#/components/schemas/Group"
+					"$ref": "#/components/schemas/schema.Group"
 				}`, string(data))
 
 				// check that the User schema was added as component
 
-				userSchema, found := doc.Components.Schemas["User"]
+				userSchema, found := doc.Components.Schemas[typeName(reflect.TypeOf(&User{}))]
 				require.True(g, found)
 
-				userSchema, found = doc.Components.Schemas["Group"]
+				userSchema, found = doc.Components.Schemas[typeName(typ)]
 				require.True(g, found)
 
 				data, err = json.Marshal(userSchema)
@@ -226,7 +248,7 @@ func TestSchema(t *testing.T) {
 						"Users": {
 							"type": "array",
 							"items": {
-								"$ref": "#/components/schemas/User"
+								"$ref": "#/components/schemas/schema.User"
 							}
 						}
 					}
