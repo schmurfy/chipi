@@ -23,7 +23,7 @@ var (
 )
 
 type BodyDecoder interface {
-	DecodeBody(body io.ReadCloser, target interface{}) error
+	DecodeBody(body io.ReadCloser, target interface{}, obj interface{}) error
 }
 
 type ResponseEncoder interface {
@@ -207,7 +207,7 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 
 		// call the request method if it implements a custom decoder
 		if decoder, ok := obj.(BodyDecoder); ok {
-			err = decoder.DecodeBody(r.Body, bodyObject)
+			err = decoder.DecodeBody(r.Body, bodyObject, obj)
 		}
 	}
 
