@@ -28,7 +28,7 @@ type someData struct {
 
 type sharedDecoder struct{}
 
-func (r *sharedDecoder) DecodeBody(body io.ReadCloser, target interface{}) error {
+func (r *sharedDecoder) DecodeBody(body io.ReadCloser, target interface{}, obj interface{}) error {
 	data := target.(*someData)
 	data.Str = "some great string !"
 

@@ -64,7 +64,7 @@ type UploadResumeRequest struct {
 	Query struct{}
 
 	Body struct {
-		File1 []byte
+		File1 []byte `json:"file1"`
 		File2 []byte
 	} `content-type:"multipart/form-data"`
 

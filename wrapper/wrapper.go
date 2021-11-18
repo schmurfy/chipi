@@ -206,8 +206,8 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 		}
 
 		// call the request method if it implements a custom decoder
-		if decoder, ok := obj.(BodyDecoder); ok {
-			err = decoder.DecodeBody(r.Body, bodyObject, obj)
+		if decoder, ok := ret.Interface().(BodyDecoder); ok {
+			err = decoder.DecodeBody(r.Body, bodyObject, ret)
 		}
 	}
 
