@@ -118,7 +118,7 @@ func (b *Builder) findRoute(typ reflect.Type, method string) *chi.Context {
 	} else {
 		fmt.Printf("failed to match %s %q\n", method, routeExample)
 		chi.Walk(b.router, func(method, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
-			fmt.Printf("  [ROUTE] %s %q\n", method, route)
+			// fmt.Printf("  [ROUTE] %s %q\n", method, route)
 			return nil
 		})
 
