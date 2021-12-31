@@ -54,7 +54,7 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 		sliceType := fieldType.Elem()
 		setValue := reflect.New(reflect.SliceOf(sliceType)).Elem()
 		for _, v := range param {
-			vv, err := convertValue(sliceType, v)
+			vv, err := convertValue(sliceType, strings.TrimSpace(v))
 			if err != nil {
 				return _noValue, err
 			}

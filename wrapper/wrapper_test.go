@@ -113,6 +113,7 @@ func TestWrapper(t *testing.T) {
 				{"ArrString", "[a,b,toto]", []string{"a", "b", "toto"}},
 				{"ArrString", `["a","b","toto"]`, []string{"a", "b", "toto"}},
 				{"ArrUint", "3,567,900", []uint{3, 567, 900}},
+				{"ArrUint", "3,  567,  900", []uint{3, 567, 900}},
 
 				{"Float32", "3.1415927", float32(3.1415927)},
 
