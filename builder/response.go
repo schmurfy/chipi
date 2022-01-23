@@ -1,18 +1,25 @@
 package builder
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/schmurfy/chipi/schema"
+	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateResponseDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
+func (b *Builder) generateResponseDoc(op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type) error {
 	responses := make(openapi3.Responses)
 
 	responseField, found := requestObjectType.FieldByName("Response")
 	if found {
 		resp := openapi3.NewResponse()
+
+		// check that a body decoder is available
+		if _, ok := requestObject.(wrapper.ResponseEncoder); !ok {
+			return fmt.Errorf("%s must implement ResponseEncoder", requestObjectType.Name())
+		}
 
 		contentType, hasContentType := responseField.Tag.Lookup("content-type")
 		if !hasContentType {

@@ -1,5 +1,6 @@
 main
 example/example
 example/chipi-gen
+chipi-gen/gen
 *.generated.go
 

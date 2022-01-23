@@ -7,7 +7,7 @@ ifneq "$(TEST_FOCUS)" ""
 endif
 
 build:
-	go build -o chipi-gen ./bin/gen.go
+	go build -o chipi-gen ./chipi-gen/gen.go
 
 # test-tools are binaries required to execute the tests
 # ex:

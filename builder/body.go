@@ -1,18 +1,29 @@
 package builder
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/schmurfy/chipi/schema"
+	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateBodyDocumentation(op *openapi3.Operation, requestObjectType reflect.Type) error {
+var (
+	bodyDecoderInterfaceType = reflect.TypeOf((*wrapper.BodyDecoder)(nil)).Elem()
+)
+
+func (b *Builder) generateBodyDoc(op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
 		bodySchema, err := b.schema.GenerateSchemaFor(b.swagger, bodyField.Type)
 		if err != nil {
 			return err
+		}
+
+		// check that a body decoder is available
+		if _, ok := requestObject.(wrapper.BodyDecoder); !ok {
+			return fmt.Errorf("%s must implement BodyDecoder", requestObjectType.Name())
 		}
 
 		contentType, found := bodyField.Tag.Lookup("content-type")

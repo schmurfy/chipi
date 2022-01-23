@@ -178,13 +178,13 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	}
 
 	// body
-	err = b.generateBodyDocumentation(op, typ)
+	err = b.generateBodyDoc(op, reqObject, typ)
 	if err != nil {
 		return
 	}
 
 	// response
-	err = b.generateResponseDocumentation(op, typ)
+	err = b.generateResponseDoc(op, reqObject, typ)
 	if err != nil {
 		return
 	}

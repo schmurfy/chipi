@@ -87,6 +87,8 @@ func (r *GetPetRequest) Handle(ctx context.Context, w http.ResponseWriter) error
 	return err
 }
 
+// @tag
+// pets
 // @summary
 // add a new pet
 type CreatePetRequest struct {
@@ -112,7 +114,7 @@ type CreatePetRequest struct {
 	Response Pet
 }
 
-func (r *CreatePetRequest) DecodeBody(body io.ReadCloser, target interface{}) error {
+func (r *CreatePetRequest) DecodeBody(body io.ReadCloser, target interface{}, obj interface{}) error {
 	pet := target.(*Pet)
 
 	c := 56

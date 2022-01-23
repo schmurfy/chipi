@@ -8,6 +8,7 @@ import (
 	"github.com/franela/goblin"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/schmurfy/chipi/response"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,15 +29,27 @@ func TestResponse(t *testing.T) {
 
 			op = openapi3.NewOperation()
 		})
+		g.It("should return an error if structure does not implemenent ResponseEncoder", func() {
+			req := struct {
+				Response struct {
+					Name string
+				}
+			}{}
+
+			err := b.generateResponseDoc(op, &req, reflect.TypeOf(req))
+			require.Error(g, err)
+			assert.Contains(g, err.Error(), "must implement ResponseEncoder")
+		})
 
 		g.It("should allow custom content-type", func() {
 			req := struct {
+				response.JsonEncoder
 				Response struct {
 					Name string
 				} `content-type:"application/pdf"`
 			}{}
 
-			err := b.generateResponseDocumentation(op, reflect.TypeOf(req))
+			err := b.generateResponseDoc(op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -52,12 +65,13 @@ func TestResponse(t *testing.T) {
 
 		g.It("should handle json response", func() {
 			req := struct {
+				response.JsonEncoder
 				Response struct {
 					Name string
 				}
 			}{}
 
-			err := b.generateResponseDocumentation(op, reflect.TypeOf(req))
+			err := b.generateResponseDoc(op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -82,10 +96,11 @@ func TestResponse(t *testing.T) {
 
 		g.It("should handle binary response", func() {
 			req := struct {
+				response.JsonEncoder
 				Response []byte `description:"the requested file"`
 			}{}
 
-			err := b.generateResponseDocumentation(op, reflect.TypeOf(req))
+			err := b.generateResponseDoc(op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]

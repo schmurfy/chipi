@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -21,19 +20,6 @@ var (
 	_tracer  = otel.Tracer("chipi")
 	_noValue = reflect.Value{}
 )
-
-type BodyDecoder interface {
-	DecodeBody(body io.ReadCloser, target interface{}, obj interface{}) error
-}
-
-type ResponseEncoder interface {
-	EncodeResponse(out http.ResponseWriter, obj interface{})
-}
-
-type HandlerInterface interface {
-	Handle(context.Context, http.ResponseWriter) error
-	HandleError(context.Context, http.ResponseWriter, error)
-}
 
 func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 	switch fieldType.Kind() {
@@ -208,6 +194,12 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 		// call the request method if it implements a custom decoder
 		if decoder, ok := ret.Interface().(BodyDecoder); ok {
 			err = decoder.DecodeBody(r.Body, bodyObject, ret)
+		} else {
+			err = fmt.Errorf(
+				"structure %s needs to implement BodyDecoder interface",
+				typ.Name(),
+			)
+			return
 		}
 	}
 
@@ -243,14 +235,28 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 			return
 		}
 
-		var filledRequestObject HandlerInterface = vv.Interface().(HandlerInterface)
-		err = filledRequestObject.Handle(ctx, w)
+		if rr, ok := vv.Interface().(HandlerWithRequestInterface); ok {
+			err = rr.Handle(ctx, r, w)
+		} else if rr, ok := vv.Interface().(HandlerInterface); ok {
+			err = rr.Handle(ctx, w)
+		}
+
 		if err != nil {
-			filledRequestObject.HandleError(ctx, w, err)
+			if rr, ok := vv.Interface().(ErrorHandlerInterface); ok {
+				rr.HandleError(ctx, w, err)
+			}
+
 		} else if response.IsValid() {
 			// encode response if any
 			if encoder, ok := obj.(ResponseEncoder); ok {
 				encoder.EncodeResponse(w, response.Interface())
+			} else {
+				err = fmt.Errorf(
+					"structure %s needs to implement ResponseEncoder interface",
+					vv.Type().Name(),
+				)
+				return
+
 			}
 		}
 
