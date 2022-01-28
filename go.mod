@@ -1,6 +1,8 @@
-module github.com/schmurfy/chipi
+module github.com/birotaio/chipi
+replace github.com/schmurfy/chipi => github.com/birotaio/chipi master
 
 go 1.16
+
 
 require (
 	github.com/dave/dst v0.26.2
