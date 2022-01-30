@@ -1,5 +1,4 @@
-module github.com/birotaio/chipi
-replace github.com/schmurfy/chipi => github.com/birotaio/chipi master
+module github.com/schmurfy/chipi
 
 go 1.16
 
