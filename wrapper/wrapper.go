@@ -174,6 +174,33 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 		}
 	}
 
+	// header
+	headerValue := ret.Elem().FieldByName("Header")
+	if headerValue.IsValid() {
+		for i := 0; i < headerValue.NumField(); i++ {
+
+			attributeName := headerValue.Type().Field(i).Name
+			structField, _ := headerValue.Type().FieldByName(attributeName)
+
+			// Tag "name" overwrite the key
+			name := structField.Tag.Get("name")
+			headerName := attributeName
+			if name != "" {
+				headerName = name
+			}
+			path := "request.header." + attributeName
+			err = setFValue(ctx,
+				path,
+				headerValue.Field(i),
+				r.Header.Get(headerName),
+			)
+			if err != nil {
+				parsingErrors[path] = err.Error()
+				hasParamsErrors = true
+			}
+		}
+	}
+
 	if hasParamsErrors {
 		err = errors.New("input parsing error")
 		return
