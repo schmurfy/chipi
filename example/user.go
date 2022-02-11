@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/schmurfy/chipi/request"
 	"github.com/schmurfy/chipi/response"
 )
 
@@ -57,6 +58,7 @@ func (r *GetUserRequest) Handle(ctx context.Context, w http.ResponseWriter) erro
 type UploadResumeRequest struct {
 	response.ErrorEncoder
 	response.JsonEncoder
+	request.JsonBodyDecoder
 
 	Path struct {
 		Name string `example:"john"`
