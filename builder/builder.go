@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 
@@ -101,30 +100,23 @@ func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) (e
 	return
 }
 
-func (b *Builder) findRoute(typ reflect.Type, method string) *chi.Context {
+func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, error) {
 	pathField, found := typ.FieldByName("Path")
 	if !found {
-		return nil
+		return nil, errors.New("Path field not found")
 	}
 
 	routeExample, found := pathField.Tag.Lookup("example")
 	if !found {
-		return nil
+		return nil, errors.New("example tag not found")
 	}
 
 	tctx := chi.NewRouteContext()
 	if b.router.Match(tctx, method, routeExample) {
-		return tctx
-	} else {
-		fmt.Printf("failed to match %s %q\n", method, routeExample)
-		chi.Walk(b.router, func(method, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
-			// fmt.Printf("  [ROUTE] %s %q\n", method, route)
-			return nil
-		})
-
+		return tctx, nil
 	}
 
-	return nil
+	return nil, errors.New("route not found")
 }
 
 func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (op *openapi3.Operation, err error) {
@@ -149,9 +141,9 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		return
 	}
 
-	routeContext := b.findRoute(typ, method)
+	routeContext, err := b.findRoute(typ, method)
 	if routeContext == nil {
-		return nil, errors.Errorf("failed to match route: %v", typ)
+		return nil, err
 	}
 
 	err = b.generateOperationDoc(r, op, typ)
