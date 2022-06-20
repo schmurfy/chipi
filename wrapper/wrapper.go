@@ -276,7 +276,7 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 		} else if response.IsValid() {
 			// encode response if any
 			if encoder, ok := obj.(ResponseEncoder); ok {
-				encoder.EncodeResponse(w, response.Interface())
+				encoder.EncodeResponse(ctx, w, response.Interface())
 			} else {
 				err = fmt.Errorf(
 					"structure %s needs to implement ResponseEncoder interface",
