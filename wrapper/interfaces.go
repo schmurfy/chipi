@@ -13,7 +13,7 @@ type BodyDecoder interface {
 
 // ResponseEncoder is required for structures with a `Response` field
 type ResponseEncoder interface {
-	EncodeResponse(out http.ResponseWriter, obj interface{})
+	EncodeResponse(ctx context.Context, out http.ResponseWriter, obj interface{})
 }
 
 type HandlerInterface interface {
