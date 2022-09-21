@@ -5,11 +5,10 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
 )
 
-func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type) error {
+func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
 	pathField, found := requestObjectType.FieldByName("Query")
 	if !found {
 		return nil
@@ -23,7 +22,7 @@ func (b *Builder) generateQueryParametersDoc(r chi.Router, op *openapi3.Operatio
 	for i := 0; i < queryStructType.NumField(); i++ {
 		field := queryStructType.Field(i)
 
-		fieldSchema, err := b.schema.GenerateSchemaFor(b.swagger, field.Type)
+		fieldSchema, err := b.schema.GenerateSchemaFor(swagger, field.Type)
 		if err != nil {
 			return err
 		}

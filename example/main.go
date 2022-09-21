@@ -121,5 +121,9 @@ func main() {
 	}
 
 	fmt.Printf("Started on 127.0.0.1:2121\n")
-	http.ListenAndServe(":2121", router)
+
+	err = http.ListenAndServe(":2121", router)
+	if err != nil {
+		panic(err)
+	}
 }

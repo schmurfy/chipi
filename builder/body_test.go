@@ -61,7 +61,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return an error if structure does not implements BodyDecoder", func() {
 			req := bodyTestWithoutDecoderRequest{}
-			err := b.generateBodyDoc(&op, &req, reflect.TypeOf(req))
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req))
 			require.Error(g, err)
 
 			assert.Contains(g, err.Error(), "must implement BodyDecoder")
@@ -69,7 +69,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return nil if structure implements BodyDecoder", func() {
 			req := bodyTestWithDecoderRequest{}
-			err := b.generateBodyDoc(&op, &req, reflect.TypeOf(req))
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 		})
 

@@ -4,10 +4,9 @@ import (
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi/v5"
 )
 
-func (b *Builder) generateOperationDoc(r chi.Router, op *openapi3.Operation, requestObjectType reflect.Type) error {
+func generateOperationDoc(op *openapi3.Operation, requestObjectType reflect.Type) error {
 	err := fillOperationFromComments(requestObjectType, op)
 	if err != nil {
 		return err
