@@ -42,10 +42,6 @@ func isValidField(name string) bool {
 	return false
 }
 
-func inspectOwnComments() {
-
-}
-
 // inspect each sub structures and invoke the callback whenever a
 // comment is found
 func inspectRequestStructure(decl *dst.GenDecl, parentTypeSpec *dst.TypeSpec, parentStruct *dst.StructType, cb inspectFunc) error {

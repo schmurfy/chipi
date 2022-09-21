@@ -12,13 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type testNestedPathRequest struct {
-	Path struct {
-		Id   int
-		Name string `example:"Ralph" description:"some text" style:"tarzan" explode:"true" chipi:"deprecated"`
-	} `example:"/sub/pet/43/Fido"`
-}
-
 type testPathRequest struct {
 	Path struct {
 		Id   int
