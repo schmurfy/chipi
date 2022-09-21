@@ -48,7 +48,7 @@ func TestParams(t *testing.T) {
 					tt := reflect.TypeOf(testPathRequest{})
 					routeContext := chi.NewRouteContext()
 					require.True(g, router.Match(routeContext, "POST", "/pet/43/Fido"))
-					err := b.generateParametersDoc(&op, tt, "POST", routeContext)
+					err := b.generateParametersDoc(b.swagger, &op, tt, "POST", routeContext)
 					require.NoError(g, err)
 				})
 

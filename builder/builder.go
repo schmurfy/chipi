@@ -15,10 +15,16 @@ type rawHandler interface {
 	Handle(http.ResponseWriter, *http.Request)
 }
 
+type Method struct {
+	pattern   string
+	method    string
+	reqObject interface{}
+}
 type Builder struct {
 	swagger *openapi3.T
 	schema  *schema.Schema
 	router  *chi.Mux
+	methods []*Method
 }
 
 func New(r *chi.Mux, infos *openapi3.Info) (*Builder, error) {
@@ -64,7 +70,7 @@ func (b *Builder) AddSecurityRequirement(req openapi3.SecurityRequirement) {
 }
 
 func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
-	data, err := b.swagger.MarshalJSON()
+	data, err := b.GenerateJson()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -81,22 +87,22 @@ func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 type CallbackFunc func(http.ResponseWriter, interface{})
 
 func (b *Builder) Get(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	_, err = b.Method(r, pattern, "GET", reqObject)
+	err = b.Method(r, pattern, "GET", reqObject)
 	return
 }
 
 func (b *Builder) Post(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	_, err = b.Method(r, pattern, "POST", reqObject)
+	err = b.Method(r, pattern, "POST", reqObject)
 	return
 }
 
 func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	_, err = b.Method(r, pattern, "PATCH", reqObject)
+	err = b.Method(r, pattern, "PATCH", reqObject)
 	return
 }
 
 func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	_, err = b.Method(r, pattern, "DELETE", reqObject)
+	err = b.Method(r, pattern, "DELETE", reqObject)
 	return
 }
 
@@ -119,18 +125,7 @@ func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, erro
 	return nil, errors.New("route not found")
 }
 
-func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (op *openapi3.Operation, err error) {
-	op = openapi3.NewOperation()
-
-	// analyze parameters if any
-	typ := reflect.TypeOf(reqObject)
-	if (typ.Kind() != reflect.Ptr) || (typ.Elem().Kind() != reflect.Struct) {
-		err = errors.New("wrong type, pointer to struct expected")
-		return
-	}
-
-	typ = typ.Elem()
-	op.OperationID = typ.Name()
+func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (err error) {
 
 	if _, ok := reqObject.(wrapper.HandlerInterface); ok {
 		r.Method(method, pattern, wrapper.WrapRequest(reqObject))
@@ -141,46 +136,78 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		return
 	}
 
-	routeContext, err := b.findRoute(typ, method)
-	if routeContext == nil {
+	b.methods = append(b.methods, &Method{
+		pattern:   pattern,
+		method:    method,
+		reqObject: reqObject,
+	})
+	return
+}
+
+func (b *Builder) GenerateJson() ([]byte, error) {
+
+	swagger := *b.swagger
+	for _, m := range b.methods {
+		op := openapi3.NewOperation()
+
+		// analyze parameters if any
+		typ := reflect.TypeOf(m.reqObject)
+		if (typ.Kind() != reflect.Ptr) || (typ.Elem().Kind() != reflect.Struct) {
+			err := errors.New("wrong type, pointer to struct expected")
+			return nil, err
+		}
+
+		typ = typ.Elem()
+		op.OperationID = typ.Name()
+
+		routeContext, err := b.findRoute(typ, m.method)
+		if routeContext == nil {
+			return nil, err
+		}
+
+		err = generateOperationDoc(op, typ)
+		if err != nil {
+			return nil, err
+		}
+
+		// URL Parameters
+		err = b.generateParametersDoc(&swagger, op, typ, m.method, routeContext)
+		if err != nil {
+			return nil, err
+		}
+
+		// Query parameters
+		err = b.generateQueryParametersDoc(&swagger, op, typ)
+		if err != nil {
+			return nil, err
+		}
+
+		// Headers
+		err = b.generateHeadersDoc(&swagger, op, typ)
+		if err != nil {
+			return nil, err
+		}
+
+		// body
+		err = b.generateBodyDoc(&swagger, op, m.reqObject, typ)
+		if err != nil {
+			return nil, err
+		}
+
+		// response
+		err = b.generateResponseDoc(&swagger, op, m.reqObject, typ)
+		if err != nil {
+			return nil, err
+		}
+
+		swagger.AddOperation(routeContext.RoutePattern(), m.method, op)
+
+	}
+
+	json, err := swagger.MarshalJSON()
+	if err != nil {
 		return nil, err
 	}
 
-	err = b.generateOperationDoc(r, op, typ)
-	if err != nil {
-		return
-	}
-
-	// URL Parameters
-	err = b.generateParametersDoc(op, typ, method, routeContext)
-	if err != nil {
-		return
-	}
-
-	// Query parameters
-	err = b.generateQueryParametersDoc(r, op, typ)
-	if err != nil {
-		return
-	}
-
-	// Headers
-	err = b.generateHeadersDoc(r, op, typ)
-	if err != nil {
-		return
-	}
-
-	// body
-	err = b.generateBodyDoc(op, reqObject, typ)
-	if err != nil {
-		return
-	}
-
-	// response
-	err = b.generateResponseDoc(op, reqObject, typ)
-	if err != nil {
-		return
-	}
-
-	b.swagger.AddOperation(routeContext.RoutePattern(), method, op)
-	return
+	return json, nil
 }
