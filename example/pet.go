@@ -15,7 +15,7 @@ type Pet struct {
 	Name         string `json:"name"`
 	Count        *int   `json:"count"`
 	User         *User  `json:"user" chipi:"nullable,deprecated"`
-	ReadOnly     int    `json:"red_only" chipi:"readonly"`
+	ReadOnly     int    `json:"read_only" chipi:"readonly"`
 	IgnoreString string `chipi:"ignore"`
 }
 

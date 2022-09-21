@@ -33,7 +33,6 @@ type GetUserRequest struct {
 		// quoted text
 		// ````
 		Name string `example:"roger"`
-		Id   int32
 	} `example:"/user/clark"`
 
 	Query struct{}
@@ -54,7 +53,7 @@ func (r *GetUserRequest) Handle(ctx context.Context, w http.ResponseWriter) erro
 }
 
 // @summary
-// upload user's resume)
+// upload user's resume
 type UploadResumeRequest struct {
 	response.ErrorEncoder
 	response.JsonEncoder
