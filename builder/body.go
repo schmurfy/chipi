@@ -9,10 +9,6 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-var (
-	bodyDecoderInterfaceType = reflect.TypeOf((*wrapper.BodyDecoder)(nil)).Elem()
-)
-
 func (b *Builder) generateBodyDoc(op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
