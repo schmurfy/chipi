@@ -73,8 +73,8 @@ func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 	data, err := b.GenerateJson()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
 	w.Header().Add("Content-Type", "application/json")
 	_, err = w.Write(data)
 	if err != nil {
@@ -109,12 +109,12 @@ func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) (e
 func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, error) {
 	pathField, found := typ.FieldByName("Path")
 	if !found {
-		return nil, errors.New("Path field not found")
+		return nil, errors.New("Path field not found on : " + typ.Name())
 	}
 
 	routeExample, found := pathField.Tag.Lookup("example")
 	if !found {
-		return nil, errors.New("example tag not found")
+		return nil, errors.New("example tag not found on : " + pathField.Name)
 	}
 
 	tctx := chi.NewRouteContext()
@@ -122,7 +122,7 @@ func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, erro
 		return tctx, nil
 	}
 
-	return nil, errors.New("route not found")
+	return nil, errors.New("route not found : " + method + " - " + routeExample)
 }
 
 func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (err error) {
