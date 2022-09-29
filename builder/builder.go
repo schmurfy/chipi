@@ -3,6 +3,7 @@ package builder
 import (
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -70,7 +71,7 @@ func (b *Builder) AddSecurityRequirement(req openapi3.SecurityRequirement) {
 }
 
 func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
-	data, err := b.GenerateJson()
+	data, err := b.GenerateJson(false, []string{""}, []string{""})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,6 +83,20 @@ func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func (b *Builder) isAllowedRoute(allowedRoutes []string, method string, pattern string) (bool, error) {
+	for _, r := range allowedRoutes {
+		route := strings.Split(r, " ")
+		if len(route) != 2 {
+			return false, errors.New("invalid route filter : " + r)
+		}
+		if method == route[0] && pattern == route[1] {
+			return true, nil
+		}
+
+	}
+	return false, nil
 }
 
 type CallbackFunc func(http.ResponseWriter, interface{})
@@ -144,11 +159,10 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	return
 }
 
-func (b *Builder) GenerateJson() ([]byte, error) {
+func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFiltered []string) ([]byte, error) {
 
 	swagger := *b.swagger
 	for _, m := range b.methods {
-		op := openapi3.NewOperation()
 
 		// analyze parameters if any
 		typ := reflect.TypeOf(m.reqObject)
@@ -158,12 +172,24 @@ func (b *Builder) GenerateJson() ([]byte, error) {
 		}
 
 		typ = typ.Elem()
-		op.OperationID = typ.Name()
 
 		routeContext, err := b.findRoute(typ, m.method)
 		if routeContext == nil {
 			return nil, err
 		}
+
+		if filter {
+			found, err := b.isAllowedRoute(allowedRoutes, m.method, routeContext.RoutePattern())
+			if err != nil {
+				return nil, err
+			}
+			if !found {
+				continue
+			}
+		}
+
+		op := openapi3.NewOperation()
+		op.OperationID = typ.Name()
 
 		err = generateOperationDoc(op, typ)
 		if err != nil {
