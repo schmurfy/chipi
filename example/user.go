@@ -56,7 +56,6 @@ func (r *GetUserRequest) Handle(ctx context.Context, w http.ResponseWriter) erro
 // upload user's resume
 type UploadResumeRequest struct {
 	response.ErrorEncoder
-	response.JsonEncoder
 	request.JsonBodyDecoder
 
 	Path struct {
@@ -68,10 +67,6 @@ type UploadResumeRequest struct {
 		File1 []byte `json:"file1"`
 		File2 []byte
 	} `content-type:"multipart/form-data"`
-
-	// @description
-	// returns nothing
-	Response struct{}
 }
 
 func (r *UploadResumeRequest) Handle(ctx context.Context, w http.ResponseWriter) error {
