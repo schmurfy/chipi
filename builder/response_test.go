@@ -41,6 +41,17 @@ func TestResponse(t *testing.T) {
 			assert.Contains(g, err.Error(), "must implement ResponseEncoder")
 		})
 
+		g.It("should add 204 response if there is no Response struct", func() {
+			req := struct {
+			}{}
+
+			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req))
+			require.NoError(g, err)
+
+			_, found := op.Responses["204"]
+			require.True(g, found)
+		})
+
 		g.It("should allow custom content-type", func() {
 			req := struct {
 				response.JsonEncoder
