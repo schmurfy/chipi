@@ -218,16 +218,29 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			bodyObject = bodyValue.Addr().Interface()
 		}
 
+		path := "request.body"
 		// call the request method if it implements a custom decoder
 		if decoder, ok := ret.Interface().(BodyDecoder); ok {
 			err = decoder.DecodeBody(r.Body, bodyObject, ret)
+			if err != nil {
+				parsingErrors[path] = err.Error()
+				hasParamsErrors = true
+			}
 		} else {
 			err = fmt.Errorf(
 				"structure %s needs to implement BodyDecoder interface",
 				typ.Name(),
 			)
+			if err != nil {
+				parsingErrors[path] = err.Error()
+				hasParamsErrors = true
+			}
 			return
 		}
+	}
+
+	if hasParamsErrors {
+		return
 	}
 
 	response = ret.Elem().FieldByName("Response")
@@ -250,7 +263,7 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 			span.End()
 		}()
 
-		parsingErrors := map[string]string{}
+		parsingErrors := make(map[string]string)
 
 		vv, response, err = createFilledRequestObject(r, obj, parsingErrors)
 		if err != nil {
@@ -258,7 +271,10 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 			if err != nil {
 				data = []byte(`{}`)
 			}
-			http.Error(w, string(data), http.StatusBadRequest)
+			w.Header().Set("content-type", "application/json")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, string(data))
 			return
 		}
 
