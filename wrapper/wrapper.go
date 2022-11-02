@@ -224,7 +224,7 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			err = decoder.DecodeBody(r.Body, bodyObject, ret)
 			if err != nil {
 				parsingErrors[path] = err.Error()
-				hasParamsErrors = true
+				return
 			}
 		} else {
 			err = fmt.Errorf(
@@ -233,14 +233,9 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			)
 			if err != nil {
 				parsingErrors[path] = err.Error()
-				hasParamsErrors = true
 			}
 			return
 		}
-	}
-
-	if hasParamsErrors {
-		return
 	}
 
 	response = ret.Elem().FieldByName("Response")
