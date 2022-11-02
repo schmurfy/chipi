@@ -263,7 +263,7 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 			span.End()
 		}()
 
-		parsingErrors := make(map[string]string)
+		parsingErrors := map[string]string{}
 
 		vv, response, err = createFilledRequestObject(r, obj, parsingErrors)
 		if err != nil {
