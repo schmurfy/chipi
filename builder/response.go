@@ -54,7 +54,7 @@ func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operatio
 		}
 	} else {
 		// if no response provided generate a default 204 code response
-		responses["204"] = nil
+		responses["204"] = &openapi3.ResponseRef{}
 	}
 
 	op.Responses = responses
