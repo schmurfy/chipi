@@ -153,8 +153,10 @@ func TestWrapper(t *testing.T) {
 					B       bool
 				}
 				Query struct {
-					Count *int
-					Unset *string
+					Count                    *int
+					Unset                    *string
+					PascalCaseNoJsonTagField *string
+					PascalCaseJsonTagField   *string `json:"overrided_name"`
 				}
 
 				PrivateString string
@@ -179,6 +181,9 @@ func TestWrapper(t *testing.T) {
 				// query
 				query := req.URL.Query()
 				query.Set("count", "2")
+				query.Set("pascal_case_no_json_tag_field", "some_value_1")
+				query.Set("overrided_name", "some_value_2")
+
 				req.URL.RawQuery = query.Encode()
 
 				m := &testRequest{
@@ -211,6 +216,14 @@ func TestWrapper(t *testing.T) {
 
 			g.It("should include private data", func() {
 				assert.Equal(g, "some private string", reqObject.PrivateString)
+			})
+
+			g.It("should parse query param in json snake case to Query struct", func() {
+				assert.Equal(g, "some_value_1", *reqObject.Query.PascalCaseNoJsonTagField)
+			})
+
+			g.It("should parse query param in json snake case to Query struct using tag", func() {
+				assert.Equal(g, "some_value_2", *reqObject.Query.PascalCaseJsonTagField)
 			})
 
 		})

@@ -155,21 +155,29 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 	// query
 	queryValue := ret.Elem().FieldByName("Query")
 	if queryValue.IsValid() {
-		for k, v := range r.URL.Query() {
-			attributeName := strings.Title(k)
-			f := queryValue.FieldByName(attributeName)
-			if f.IsValid() {
-				path := "request.query." + attributeName
-				err = setFValue(ctx,
-					path,
-					f,
-					v[0],
-				)
+		for i := 0; i < queryValue.NumField(); i++ {
 
-				if err != nil {
-					parsingErrors[path] = err.Error()
-					hasParamsErrors = true
-				}
+			queryFieldName := queryValue.Type().Field(i).Name
+			structField, _ := queryValue.Type().FieldByName(queryFieldName)
+
+			// Tag "json" overwrite the key
+			name := structField.Tag.Get("json")
+			parsedQueryFieldName := queryFieldName
+			if name != "" {
+				parsedQueryFieldName = name
+			} else {
+				parsedQueryFieldName = ToSnakeCase(parsedQueryFieldName)
+			}
+
+			path := "request.query." + parsedQueryFieldName
+			err = setFValue(ctx,
+				path,
+				queryValue.Field(i),
+				r.URL.Query().Get(parsedQueryFieldName),
+			)
+			if err != nil {
+				parsingErrors[path] = err.Error()
+				hasParamsErrors = true
 			}
 		}
 	}
