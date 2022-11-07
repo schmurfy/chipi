@@ -177,11 +177,10 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 					queryValue.Field(i),
 					value[0],
 				)
-			}
-
-			if err != nil {
-				parsingErrors[path] = err.Error()
-				hasParamsErrors = true
+				if err != nil {
+					parsingErrors[path] = err.Error()
+					hasParamsErrors = true
+				}
 			}
 		}
 	}
@@ -207,10 +206,10 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 					headerValue.Field(i),
 					value[0],
 				)
-			}
-			if err != nil {
-				parsingErrors[path] = err.Error()
-				hasParamsErrors = true
+				if err != nil {
+					parsingErrors[path] = err.Error()
+					hasParamsErrors = true
+				}
 			}
 		}
 	}
