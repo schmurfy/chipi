@@ -201,11 +201,13 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 				headerName = name
 			}
 			path := "request.header." + attributeName
-			err = setFValue(ctx,
-				path,
-				headerValue.Field(i),
-				r.Header.Get(headerName),
-			)
+			if value, ok := r.Header[headerName]; ok {
+				err = setFValue(ctx,
+					path,
+					headerValue.Field(i),
+					value[0],
+				)
+			}
 			if err != nil {
 				parsingErrors[path] = err.Error()
 				hasParamsErrors = true
