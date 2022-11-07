@@ -2,10 +2,10 @@ package builder
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
+	"github.com/schmurfy/chipi/wrapper"
 )
 
 func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
@@ -27,7 +27,14 @@ func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.O
 			return err
 		}
 
-		param := openapi3.NewQueryParameter(strings.ToLower(field.Name))
+		var name string
+		if field.Tag.Get("json") != "" {
+			name = field.Tag.Get("json")
+		} else {
+			name = wrapper.ToSnakeCase(field.Name)
+		}
+
+		param := openapi3.NewQueryParameter(name)
 
 		if (fieldSchema.Ref != "") || (fieldSchema.Value.Type == "object") {
 			// we need to wrap the schema
