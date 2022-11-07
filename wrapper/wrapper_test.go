@@ -153,10 +153,11 @@ func TestWrapper(t *testing.T) {
 					B       bool
 				}
 				Query struct {
-					Count                    *int
-					Unset                    *string
-					PascalCaseNoJsonTagField *string
-					PascalCaseJsonTagField   *string `json:"overrided_name"`
+					Count                     *int
+					FieldUnspecifiedInRequest *int
+					Unset                     *string
+					PascalCaseNoJsonTagField  *string
+					PascalCaseJsonTagField    *string `json:"overrided_name"`
 				}
 
 				PrivateString string
@@ -224,6 +225,10 @@ func TestWrapper(t *testing.T) {
 
 			g.It("should parse query param in json snake case to Query struct using tag", func() {
 				assert.Equal(g, "some_value_2", *reqObject.Query.PascalCaseJsonTagField)
+			})
+			g.It("should parse unspecified field to zero value", func() {
+
+				require.Nil(g, reqObject.Query.FieldUnspecifiedInRequest)
 			})
 
 		})
