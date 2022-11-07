@@ -170,11 +170,15 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			}
 
 			path := "request.query." + parsedQueryFieldName
-			err = setFValue(ctx,
-				path,
-				queryValue.Field(i),
-				r.URL.Query().Get(parsedQueryFieldName),
-			)
+
+			if value, ok := r.URL.Query()[parsedQueryFieldName]; ok {
+				err = setFValue(ctx,
+					path,
+					queryValue.Field(i),
+					value[0],
+				)
+			}
+
 			if err != nil {
 				parsingErrors[path] = err.Error()
 				hasParamsErrors = true
