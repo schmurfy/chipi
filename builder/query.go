@@ -5,6 +5,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
+	"github.com/schmurfy/chipi/schema"
 	"github.com/schmurfy/chipi/wrapper"
 )
 
@@ -27,10 +28,8 @@ func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.O
 			return err
 		}
 
-		var name string
-		if field.Tag.Get("json") != "" {
-			name = field.Tag.Get("json")
-		} else {
+		name := schema.ParseJsonTag(field).Name
+		if name == field.Name {
 			name = wrapper.ToSnakeCase(field.Name)
 		}
 
