@@ -158,6 +158,7 @@ func TestWrapper(t *testing.T) {
 					Unset                     *string
 					PascalCaseNoJsonTagField  *string
 					PascalCaseJsonTagField    *string `json:"overrided_name"`
+					Slice                     []string
 				}
 
 				PrivateString string
@@ -166,6 +167,8 @@ func TestWrapper(t *testing.T) {
 			var req *http.Request
 			var rctx *chi.Context
 			var reqObject *testRequest
+
+			var slice []string
 
 			g.BeforeEach(func() {
 				var ok bool
@@ -184,6 +187,8 @@ func TestWrapper(t *testing.T) {
 				query.Set("count", "2")
 				query.Set("pascal_case_no_json_tag_field", "some_value_1")
 				query.Set("overrided_name", "some_value_2")
+				slice = []string{"name", "duration", "label"}
+				query.Set("slice", strings.Join(slice, ","))
 
 				req.URL.RawQuery = query.Encode()
 
@@ -220,14 +225,20 @@ func TestWrapper(t *testing.T) {
 			})
 
 			g.It("should parse query param in json snake case to Query struct", func() {
+				require.NotNil(g, reqObject.Query.PascalCaseNoJsonTagField)
 				assert.Equal(g, "some_value_1", *reqObject.Query.PascalCaseNoJsonTagField)
 			})
 
 			g.It("should parse query param in json snake case to Query struct using tag", func() {
+				require.NotNil(g, reqObject.Query.PascalCaseJsonTagField)
 				assert.Equal(g, "some_value_2", *reqObject.Query.PascalCaseJsonTagField)
 			})
-			g.It("should parse unspecified field to zero value", func() {
 
+			g.It("should parse slice field", func() {
+				require.Equal(g, slice, reqObject.Query.Slice)
+			})
+
+			g.It("should parse unspecified field to zero value", func() {
 				require.Nil(g, reqObject.Query.FieldUnspecifiedInRequest)
 			})
 
