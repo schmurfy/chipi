@@ -159,6 +159,7 @@ func TestWrapper(t *testing.T) {
 					PascalCaseNoJsonTagField  *string
 					PascalCaseJsonTagField    *string `json:"overrided_name"`
 					Slice                     []string
+					Tag                       string `json:"tag,omitempty"`
 				}
 
 				PrivateString string
@@ -187,6 +188,7 @@ func TestWrapper(t *testing.T) {
 				query.Set("count", "2")
 				query.Set("pascal_case_no_json_tag_field", "some_value_1")
 				query.Set("overrided_name", "some_value_2")
+				query.Set("tag", "some_tag_value")
 				slice = []string{"name", "duration", "label"}
 				query.Set("slice", strings.Join(slice, ","))
 
@@ -232,6 +234,10 @@ func TestWrapper(t *testing.T) {
 			g.It("should parse query param in json snake case to Query struct using tag", func() {
 				require.NotNil(g, reqObject.Query.PascalCaseJsonTagField)
 				assert.Equal(g, "some_value_2", *reqObject.Query.PascalCaseJsonTagField)
+			})
+
+			g.It("should parse tag field with multiple json tags", func() {
+				require.Equal(g, "some_tag_value", reqObject.Query.Tag)
 			})
 
 			g.It("should parse slice field", func() {

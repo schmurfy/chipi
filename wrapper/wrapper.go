@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/schmurfy/chipi/schema"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -161,14 +162,10 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			structField, _ := queryValue.Type().FieldByName(queryFieldName)
 
 			// Tag "json" overwrite the key
-			name := structField.Tag.Get("json")
-			parsedQueryFieldName := queryFieldName
-			if name != "" {
-				parsedQueryFieldName = name
-			} else {
-				parsedQueryFieldName = ToSnakeCase(parsedQueryFieldName)
+			parsedQueryFieldName := schema.ParseJsonTag(structField).Name
+			if parsedQueryFieldName == structField.Name {
+				parsedQueryFieldName = ToSnakeCase(structField.Name)
 			}
-
 			path := "request.query." + parsedQueryFieldName
 
 			if value, ok := r.URL.Query()[parsedQueryFieldName]; ok {
