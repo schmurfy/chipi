@@ -9,10 +9,11 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateBodyDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type) error {
+func (b *Builder) generateBodyDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, fieldsFiltered []string) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
-		bodySchema, err := b.schema.GenerateSchemaFor(swagger, bodyField.Type)
+
+		bodySchema, err := b.schema.GenerateSchemaFor(swagger, bodyField.Type, fieldsFiltered)
 		if err != nil {
 			return err
 		}

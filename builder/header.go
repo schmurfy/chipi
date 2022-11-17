@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (b *Builder) generateHeadersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
+func (b *Builder) generateHeadersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, fieldsFiltered []string) error {
 	headerField, found := requestObjectType.FieldByName("Header")
 	if !found {
 		return nil
@@ -21,7 +21,7 @@ func (b *Builder) generateHeadersDoc(swagger *openapi3.T, op *openapi3.Operation
 	for i := 0; i < headerStructType.NumField(); i++ {
 		field := headerStructType.Field(i)
 
-		schema, err := b.schema.GenerateSchemaFor(swagger, field.Type)
+		schema, err := b.schema.GenerateSchemaFor(swagger, field.Type, fieldsFiltered)
 		if err != nil {
 			return err
 		}

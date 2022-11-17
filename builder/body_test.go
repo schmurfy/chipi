@@ -16,8 +16,23 @@ import (
 
 type noopHandler struct{}
 
+type AnyStruct struct {
+	Name  string
+	Name2 string
+}
+
 func (e *noopHandler) Handle(context.Context, http.ResponseWriter) error {
 	return nil
+}
+
+type bodyTestWithStructBody struct {
+	noopHandler
+
+	Path struct {
+	} `example:"/pet"`
+	request.JsonBodyDecoder
+
+	Body AnyStruct
 }
 
 type bodyTestWithoutDecoderRequest struct {
@@ -61,7 +76,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return an error if structure does not implements BodyDecoder", func() {
 			req := bodyTestWithoutDecoderRequest{}
-			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req))
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), []string{})
 			require.Error(g, err)
 
 			assert.Contains(g, err.Error(), "must implement BodyDecoder")
@@ -69,9 +84,16 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return nil if structure implements BodyDecoder", func() {
 			req := bodyTestWithDecoderRequest{}
-			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req))
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), []string{})
 			require.NoError(g, err)
 		})
 
+		g.It("should ?? blacklist", func() {
+			req := bodyTestWithStructBody{}
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), []string{"builder.anystruct.name"})
+			require.NoError(g, err)
+			require.Nil(g, b.swagger.Components.Schemas["builder.AnyStruct"].Value.Properties["Name"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.AnyStruct"].Value.Properties["Name2"])
+		})
 	})
 }
