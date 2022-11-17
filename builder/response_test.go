@@ -9,6 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/schmurfy/chipi/response"
+	"github.com/schmurfy/chipi/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +37,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), []string{})
+			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), schema.Fields{})
 			require.Error(g, err)
 			assert.Contains(g, err.Error(), "must implement ResponseEncoder")
 		})
@@ -45,7 +46,7 @@ func TestResponse(t *testing.T) {
 			req := struct {
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), []string{})
+			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), schema.Fields{})
 			require.NoError(g, err)
 
 			_, found := op.Responses["204"]
@@ -60,7 +61,7 @@ func TestResponse(t *testing.T) {
 				} `content-type:"application/pdf"`
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), []string{})
+			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), schema.Fields{})
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -82,7 +83,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), []string{})
+			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), schema.Fields{})
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -111,7 +112,7 @@ func TestResponse(t *testing.T) {
 				Response []byte `description:"the requested file"`
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), []string{})
+			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req), schema.Fields{})
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]

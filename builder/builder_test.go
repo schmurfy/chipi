@@ -9,6 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/schmurfy/chipi/response"
+	"github.com/schmurfy/chipi/schema"
 	"github.com/stretchr/testify/require"
 )
 
@@ -72,7 +73,7 @@ func TestBuilder(t *testing.T) {
 				})
 
 				g.It("should not filter routes", func() {
-					json, err := b.GenerateJson(false, []string{""}, []string{""})
+					json, err := b.GenerateJson(false, []string{""}, schema.Fields{})
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
@@ -80,7 +81,7 @@ func TestBuilder(t *testing.T) {
 					require.NotNil(g, swagger.Paths[routePath])
 				})
 				g.It("should filter routes", func() {
-					json, err := b.GenerateJson(true, []string{"POST other/route"}, []string{""})
+					json, err := b.GenerateJson(true, []string{"POST other/route"}, schema.Fields{})
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
@@ -89,7 +90,7 @@ func TestBuilder(t *testing.T) {
 				})
 
 				g.It("should authorize routes", func() {
-					json, err := b.GenerateJson(true, []string{"POST " + routePath}, []string{""})
+					json, err := b.GenerateJson(true, []string{"POST " + routePath}, schema.Fields{})
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)

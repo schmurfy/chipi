@@ -9,7 +9,7 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, fieldsFiltered []string) error {
+func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, fieldsFiltered schema.Fields) error {
 	responses := make(openapi3.Responses)
 
 	responseField, found := requestObjectType.FieldByName("Response")

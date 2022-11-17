@@ -5,9 +5,10 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
+	"github.com/schmurfy/chipi/schema"
 )
 
-func (b *Builder) generateHeadersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, fieldsFiltered []string) error {
+func (b *Builder) generateHeadersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, fieldsFiltered schema.Fields) error {
 	headerField, found := requestObjectType.FieldByName("Header")
 	if !found {
 		return nil

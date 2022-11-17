@@ -8,6 +8,7 @@ import (
 	"github.com/franela/goblin"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/schmurfy/chipi/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,7 +49,7 @@ func TestParams(t *testing.T) {
 					tt := reflect.TypeOf(testPathRequest{})
 					routeContext := chi.NewRouteContext()
 					require.True(g, router.Match(routeContext, "POST", "/pet/43/Fido"))
-					err := b.generateParametersDoc(b.swagger, &op, tt, "POST", routeContext, []string{})
+					err := b.generateParametersDoc(b.swagger, &op, tt, "POST", routeContext, schema.Fields{})
 					require.NoError(g, err)
 				})
 

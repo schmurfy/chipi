@@ -71,7 +71,9 @@ func (b *Builder) AddSecurityRequirement(req openapi3.SecurityRequirement) {
 }
 
 func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
-	data, err := b.GenerateJson(false, []string{""}, []string{""})
+	data, err := b.GenerateJson(false, []string{""}, schema.Fields{
+		Protected: []string{""},
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -159,7 +161,7 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	return
 }
 
-func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFiltered []string) ([]byte, error) {
+func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFiltered schema.Fields) ([]byte, error) {
 
 	swagger := *b.swagger
 	for _, m := range b.methods {

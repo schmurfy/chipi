@@ -9,7 +9,7 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, fieldsFiltered []string) error {
+func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, fieldsFiltered schema.Fields) error {
 	pathField, found := requestObjectType.FieldByName("Query")
 	if !found {
 		return nil

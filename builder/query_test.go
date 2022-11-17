@@ -7,6 +7,7 @@ import (
 	"github.com/franela/goblin"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/schmurfy/chipi/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +42,7 @@ func TestQueryParams(t *testing.T) {
 
 			g.BeforeEach(func() {
 				tt := reflect.TypeOf(testQueryRequest{})
-				err := b.generateQueryParametersDoc(b.swagger, &op, tt, []string{})
+				err := b.generateQueryParametersDoc(b.swagger, &op, tt, schema.Fields{})
 				require.NoError(g, err)
 			})
 
