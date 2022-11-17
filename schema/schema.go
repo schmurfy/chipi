@@ -3,11 +3,9 @@ package schema
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -17,16 +15,21 @@ var (
 type Schema struct {
 }
 
+type Fields struct {
+	Protected []string
+	Whitelist []string
+}
+
 func New() (*Schema, error) {
 	return &Schema{}, nil
 }
 
-func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type, fieldsFiltered []string) (schema *openapi3.SchemaRef, err error) {
+func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type, fieldsFiltered Fields) (schema *openapi3.SchemaRef, err error) {
 	// return s.generateSchemaFor(doc, t, 1)
 	return s.generateSchemaFor(doc, t, fieldsFiltered, 0)
 }
 
-func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, fieldsFiltered []string, inlineLevel int) (schema *openapi3.SchemaRef, err error) {
+func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, fieldsFiltered Fields, inlineLevel int) (schema *openapi3.SchemaRef, err error) {
 	fullName := typeName(t)
 
 	if doc.Components.Schemas != nil {
@@ -162,7 +165,7 @@ func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
-func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, fieldsFiltered []string, inlineLevel int) (*openapi3.Schema, error) {
+func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, fieldsFiltered Fields, inlineLevel int) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}
@@ -172,13 +175,13 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, fields
 		tag := ParseJsonTag(f)
 
 		//Create registry string
-		packages := strings.Split(t.String(), ".")
-		if len(fieldsFiltered) > 0 && len(packages) == 2 {
-			field := fmt.Sprintf("%s.%s.%s", strings.ToLower(packages[0]), strings.ToLower(packages[1]), strings.ToLower(f.Name))
-			if slices.Contains(fieldsFiltered, field) { //Skip field
-				continue
-			}
-		}
+		// packages := strings.Split(t.String(), ".")
+		// if len(fieldsFiltered) > 0 && len(packages) == 2 {
+		// 	field := fmt.Sprintf("%s.%s.%s", strings.ToLower(packages[0]), strings.ToLower(packages[1]), strings.ToLower(f.Name))
+		// 	if slices.Contains(fieldsFiltered, field) { //Skip field
+		// 		continue
+		// 	}
+		// }
 
 		if (tag.Ignored != nil) && *tag.Ignored {
 			continue

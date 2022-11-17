@@ -35,7 +35,7 @@ func checkGeneratedType(g *goblin.G, schemaPtr **Schema, docPtr **openapi3.T, va
 		require.NotNil(g, s)
 
 		typ := reflect.TypeOf(value)
-		schema, err := s.GenerateSchemaFor(doc, typ, []string{})
+		schema, err := s.GenerateSchemaFor(doc, typ, Fields{})
 		require.NoError(g, err)
 
 		data, err := json.Marshal(schema)
@@ -115,11 +115,11 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate correct types for same structure name", func() {
 				typ1 := reflect.TypeOf(&monster.QueryResponse{})
-				schema1, err := s.GenerateSchemaFor(doc, typ1, []string{})
+				schema1, err := s.GenerateSchemaFor(doc, typ1, Fields{})
 				require.NoError(g, err)
 
 				typ2 := reflect.TypeOf(&pet.QueryResponse{})
-				schema2, err := s.GenerateSchemaFor(doc, typ2, []string{})
+				schema2, err := s.GenerateSchemaFor(doc, typ2, Fields{})
 				require.NoError(g, err)
 
 				assert.NotEqual(g, schema1.Ref, schema2.Ref)
@@ -140,7 +140,7 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate referenced type for user", func() {
 				typ := reflect.TypeOf(&User{})
-				schema, err := s.GenerateSchemaFor(doc, typ, []string{})
+				schema, err := s.GenerateSchemaFor(doc, typ, Fields{})
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -176,7 +176,7 @@ func TestSchema(t *testing.T) {
 
 				g.Timeout(5 * time.Second)
 				typ := reflect.TypeOf(&RecursiveUser{})
-				_, err := s.GenerateSchemaFor(doc, typ, []string{})
+				_, err := s.GenerateSchemaFor(doc, typ, Fields{})
 				require.NoError(g, err)
 			})
 
@@ -198,7 +198,7 @@ func TestSchema(t *testing.T) {
 				}{}
 
 				typ := reflect.TypeOf(&st)
-				schema, err := s.GenerateSchemaFor(doc, typ, []string{})
+				schema, err := s.GenerateSchemaFor(doc, typ, Fields{})
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -217,7 +217,7 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate referenced type for Group with link to User", func() {
 				typ := reflect.TypeOf(&Group{})
-				schema, err := s.GenerateSchemaFor(doc, typ, []string{})
+				schema, err := s.GenerateSchemaFor(doc, typ, Fields{})
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)

@@ -6,9 +6,10 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
+	"github.com/schmurfy/chipi/schema"
 )
 
-func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, fieldsFiltered []string) error {
+func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, fieldsFiltered schema.Fields) error {
 	pathField, found := requestObjectType.FieldByName("Query")
 	if !found {
 		return nil

@@ -10,6 +10,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/schmurfy/chipi/request"
+	"github.com/schmurfy/chipi/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,7 +77,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return an error if structure does not implements BodyDecoder", func() {
 			req := bodyTestWithoutDecoderRequest{}
-			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), []string{})
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), schema.Fields{})
 			require.Error(g, err)
 
 			assert.Contains(g, err.Error(), "must implement BodyDecoder")
@@ -84,13 +85,15 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return nil if structure implements BodyDecoder", func() {
 			req := bodyTestWithDecoderRequest{}
-			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), []string{})
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), schema.Fields{})
 			require.NoError(g, err)
 		})
 
 		g.It("should ?? blacklist", func() {
 			req := bodyTestWithStructBody{}
-			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), []string{"builder.anystruct.name"})
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), schema.Fields{
+				Protected: []string{"builder.anystruct.name"},
+			})
 			require.NoError(g, err)
 			require.Nil(g, b.swagger.Components.Schemas["builder.AnyStruct"].Value.Properties["Name"])
 			require.NotNil(g, b.swagger.Components.Schemas["builder.AnyStruct"].Value.Properties["Name2"])

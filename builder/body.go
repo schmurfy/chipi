@@ -9,7 +9,7 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateBodyDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, fieldsFiltered []string) error {
+func (b *Builder) generateBodyDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, fieldsFiltered schema.Fields) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
 
