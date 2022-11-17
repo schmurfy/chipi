@@ -9,7 +9,7 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type) error {
+func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, fieldsFiltered []string) error {
 	responses := make(openapi3.Responses)
 
 	responseField, found := requestObjectType.FieldByName("Response")
@@ -37,7 +37,7 @@ func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operatio
 		}
 
 		if typ.Kind() == reflect.Struct {
-			responseSchema, err := b.schema.GenerateSchemaFor(swagger, typ)
+			responseSchema, err := b.schema.GenerateSchemaFor(swagger, typ, fieldsFiltered)
 			if err != nil {
 				return err
 			}

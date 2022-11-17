@@ -41,7 +41,7 @@ func TestQueryParams(t *testing.T) {
 
 			g.BeforeEach(func() {
 				tt := reflect.TypeOf(testQueryRequest{})
-				err := b.generateQueryParametersDoc(b.swagger, &op, tt)
+				err := b.generateQueryParametersDoc(b.swagger, &op, tt, []string{})
 				require.NoError(g, err)
 			})
 

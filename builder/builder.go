@@ -197,31 +197,31 @@ func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFilter
 		}
 
 		// URL Parameters
-		err = b.generateParametersDoc(&swagger, op, typ, m.method, routeContext)
+		err = b.generateParametersDoc(&swagger, op, typ, m.method, routeContext, fieldsFiltered)
 		if err != nil {
 			return nil, err
 		}
 
 		// Query parameters
-		err = b.generateQueryParametersDoc(&swagger, op, typ)
+		err = b.generateQueryParametersDoc(&swagger, op, typ, fieldsFiltered)
 		if err != nil {
 			return nil, err
 		}
 
 		// Headers
-		err = b.generateHeadersDoc(&swagger, op, typ)
+		err = b.generateHeadersDoc(&swagger, op, typ, fieldsFiltered)
 		if err != nil {
 			return nil, err
 		}
 
 		// body
-		err = b.generateBodyDoc(&swagger, op, m.reqObject, typ)
+		err = b.generateBodyDoc(&swagger, op, m.reqObject, typ, fieldsFiltered)
 		if err != nil {
 			return nil, err
 		}
 
 		// response
-		err = b.generateResponseDoc(&swagger, op, m.reqObject, typ)
+		err = b.generateResponseDoc(&swagger, op, m.reqObject, typ, fieldsFiltered)
 		if err != nil {
 			return nil, err
 		}

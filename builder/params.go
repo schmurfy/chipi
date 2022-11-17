@@ -11,7 +11,7 @@ import (
 	"github.com/schmurfy/chipi/schema"
 )
 
-func (b *Builder) generateParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, method string, routeContext *chi.Context) error {
+func (b *Builder) generateParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, method string, routeContext *chi.Context, fieldsFiltered []string) error {
 	pathField, found := requestObjectType.FieldByName("Path")
 	if !found {
 		return errors.New("wrong struct, Path field expected")
@@ -28,7 +28,7 @@ func (b *Builder) generateParametersDoc(swagger *openapi3.T, op *openapi3.Operat
 			return errors.Errorf("wrong path struct, field %s expected", key)
 		}
 
-		schema, err := b.schema.GenerateSchemaFor(swagger, paramField.Type)
+		schema, err := b.schema.GenerateSchemaFor(swagger, paramField.Type, fieldsFiltered)
 		if err != nil {
 			return err
 		}

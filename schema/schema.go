@@ -3,9 +3,11 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -19,12 +21,12 @@ func New() (*Schema, error) {
 	return &Schema{}, nil
 }
 
-func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
+func (s *Schema) GenerateSchemaFor(doc *openapi3.T, t reflect.Type, fieldsFiltered []string) (schema *openapi3.SchemaRef, err error) {
 	// return s.generateSchemaFor(doc, t, 1)
-	return s.generateSchemaFor(doc, t, 0)
+	return s.generateSchemaFor(doc, t, fieldsFiltered, 0)
 }
 
-func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel int) (schema *openapi3.SchemaRef, err error) {
+func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, fieldsFiltered []string, inlineLevel int) (schema *openapi3.SchemaRef, err error) {
 	fullName := typeName(t)
 
 	if doc.Components.Schemas != nil {
@@ -75,7 +77,7 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 			}
 
 		} else {
-			items, err = s.generateSchemaFor(doc, t.Elem(), 0)
+			items, err = s.generateSchemaFor(doc, t.Elem(), fieldsFiltered, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -94,7 +96,7 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 		}
 
 	case reflect.Map:
-		additionalProperties, err := s.generateSchemaFor(doc, t.Elem(), 0)
+		additionalProperties, err := s.generateSchemaFor(doc, t.Elem(), fieldsFiltered, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +119,8 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 
 		// if we have an anonymous structure, inline it and stop there
 		if (t.Name() == "") || (inlineLevel > 0) {
-			schema.Value, err = s.generateStructureSchema(doc, t, inlineLevel)
+			schema.Value, err = s.generateStructureSchema(doc, t, fieldsFiltered, inlineLevel)
+
 			// return wether an error occurred ot not so don't bother
 			// checking err which will be returned anyway
 			return
@@ -132,7 +135,7 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 			doc.Components.Schemas[fullName] = ref
 
 			// fmt.Printf("%s - BEFORE: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
-			ref.Value, err = s.generateStructureSchema(doc, t, inlineLevel)
+			ref.Value, err = s.generateStructureSchema(doc, t, fieldsFiltered, inlineLevel)
 			if err != nil {
 				return
 			}
@@ -159,7 +162,7 @@ func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
-func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, inlineLevel int) (*openapi3.Schema, error) {
+func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, fieldsFiltered []string, inlineLevel int) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}
@@ -168,11 +171,20 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, inline
 		f := t.Field(i)
 		tag := ParseJsonTag(f)
 
+		//Create registry string
+		packages := strings.Split(t.String(), ".")
+		if len(fieldsFiltered) > 0 && len(packages) == 2 {
+			field := fmt.Sprintf("%s.%s.%s", strings.ToLower(packages[0]), strings.ToLower(packages[1]), strings.ToLower(f.Name))
+			if slices.Contains(fieldsFiltered, field) { //Skip field
+				continue
+			}
+		}
+
 		if (tag.Ignored != nil) && *tag.Ignored {
 			continue
 		}
 
-		fieldSchema, err := s.generateSchemaFor(doc, f.Type, inlineLevel-1)
+		fieldSchema, err := s.generateSchemaFor(doc, f.Type, fieldsFiltered, inlineLevel-1)
 		if err != nil {
 			return nil, err
 		}
