@@ -2,9 +2,11 @@ package builder
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/franela/goblin"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -17,9 +19,58 @@ import (
 
 type noopHandler struct{}
 
-type AnyStruct struct {
-	Name  string
-	Name2 string
+type GolangTypes struct {
+	ID     string
+	Int    int
+	IntPtr *int
+
+	Int8    int8
+	Int8Ptr *int8
+
+	Int16 int16
+	Int32 int32
+	Int64 int64
+
+	Uint   uint
+	Uint32 uint32
+	Uint64 uint64
+
+	Float32 float32
+	Float64 float64
+
+	ArrString    []string
+	ArrStringPtr []*string
+
+	Str    string
+	StrPtr *string
+
+	Bool    bool
+	BoolPtr *bool
+
+	Nested    Nested
+	NestedPtr *Nested
+
+	ArrNested    []Nested
+	ArrNestedPtr []*Nested
+
+	ArrNested2 []Nested2
+
+	Time *time.Time
+
+	//External external_package_test.External
+}
+
+type Nested struct {
+	Type    string
+	Nnested NestedNested
+}
+
+type NestedNested struct {
+	Bool bool
+}
+
+type Nested2 struct {
+	String string
 }
 
 func (e *noopHandler) Handle(context.Context, http.ResponseWriter) error {
@@ -33,7 +84,7 @@ type bodyTestWithStructBody struct {
 	} `example:"/pet"`
 	request.JsonBodyDecoder
 
-	Body AnyStruct
+	Body GolangTypes
 }
 
 type bodyTestWithoutDecoderRequest struct {
@@ -89,14 +140,60 @@ func TestBodyGenerator(t *testing.T) {
 			require.NoError(g, err)
 		})
 
-		g.It("should ?? blacklist", func() {
+		g.It("should protect a field", func() {
 			req := bodyTestWithStructBody{}
 			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), schema.Fields{
-				Protected: []string{"builder.anystruct.name"},
+				Protected: []string{"builder.golangtypes.id"},
+			})
+			//If builder.anystruct.id is passed to generateBodyDoc, it means the user doesn't have the permissions
+			require.NoError(g, err)
+			fmt.Printf("Properties: %+v\n", b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties)
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["ID"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Int"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["IntPtr"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Str"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["StrPtr"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Bool"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["BoolPtr"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Nested"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["NestedPtr"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.Nested"])
+		})
+
+		g.It("should whitelist a field", func() {
+			req := bodyTestWithStructBody{}
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), schema.Fields{
+				Whitelist: []string{"builder.golangtypes.id"},
 			})
 			require.NoError(g, err)
-			require.Nil(g, b.swagger.Components.Schemas["builder.AnyStruct"].Value.Properties["Name"])
-			require.NotNil(g, b.swagger.Components.Schemas["builder.AnyStruct"].Value.Properties["Name2"])
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["ID"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Int"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Int"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["IntPtr"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Str"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["StrPtr"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Bool"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["BoolPtr"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Nested"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["NestedPtr"])
+		})
+
+		g.It("should whitelist a field", func() {
+			req := bodyTestWithStructBody{}
+			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), schema.Fields{
+				Whitelist: []string{"builder.golangtypes.id"},
+			})
+			require.NoError(g, err)
+			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["ID"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Int"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Int"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["IntPtr"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Str"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["StrPtr"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Bool"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["BoolPtr"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Nested"])
+			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["NestedPtr"])
 		})
 	})
 }
