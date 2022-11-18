@@ -2,7 +2,6 @@ package builder
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -147,7 +146,6 @@ func TestBodyGenerator(t *testing.T) {
 			})
 			//If builder.anystruct.id is passed to generateBodyDoc, it means the user doesn't have the permissions
 			require.NoError(g, err)
-			fmt.Printf("Properties: %+v\n", b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties)
 			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["ID"])
 			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["Int"])
 			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["IntPtr"])
@@ -178,10 +176,11 @@ func TestBodyGenerator(t *testing.T) {
 			require.Nil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["NestedPtr"])
 		})
 
-		g.It("should whitelist a field", func() {
+		g.It("should still whitelists fields", func() {
 			req := bodyTestWithStructBody{}
 			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req), schema.Fields{
 				Whitelist: []string{"builder.golangtypes.id"},
+				Protected: []string{"builder.golangtypes.int"},
 			})
 			require.NoError(g, err)
 			require.NotNil(g, b.swagger.Components.Schemas["builder.GolangTypes"].Value.Properties["ID"])
