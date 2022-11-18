@@ -3,9 +3,11 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -58,7 +60,7 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, fieldsFilter
 	case reflect.Int8, reflect.Int16, reflect.Int32:
 		schema.Value = openapi3.NewInt32Schema()
 
-	case reflect.Int, reflect.Int64,
+	case reflect.Int, reflect.Int64, reflect.Uint,
 		reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		schema.Value = openapi3.NewInt64Schema()
 
@@ -165,9 +167,39 @@ func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
+func HasSharedValues[T comparable](l1 []T, l2 []T) bool {
+	for _, v1 := range l1 {
+		for _, v2 := range l2 {
+			if v1 == v2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, fieldsFiltered Fields, inlineLevel int) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
+	}
+
+	toDelete := make([]string, 0)
+	enforceWhitelist := false
+
+	packages := strings.Split(t.String(), ".")
+
+	for i := 0; i < t.NumField(); i++ {
+		if len(packages) != 2 {
+			continue
+		}
+		f := t.Field(i)
+		fieldName := fmt.Sprintf("%s.%s.%s", strings.ToLower(packages[0]), strings.ToLower(packages[1]), strings.ToLower(f.Name))
+
+		if slices.Contains(fieldsFiltered.Whitelist, fieldName) {
+			enforceWhitelist = true
+		} else {
+			toDelete = append(toDelete, fieldName)
+		}
 	}
 
 	for i := 0; i < t.NumField(); i++ {
@@ -175,13 +207,14 @@ func (s *Schema) generateStructureSchema(doc *openapi3.T, t reflect.Type, fields
 		tag := ParseJsonTag(f)
 
 		//Create registry string
-		// packages := strings.Split(t.String(), ".")
-		// if len(fieldsFiltered) > 0 && len(packages) == 2 {
-		// 	field := fmt.Sprintf("%s.%s.%s", strings.ToLower(packages[0]), strings.ToLower(packages[1]), strings.ToLower(f.Name))
-		// 	if slices.Contains(fieldsFiltered, field) { //Skip field
-		// 		continue
-		// 	}
-		// }
+		if len(packages) == 2 {
+			field := fmt.Sprintf("%s.%s.%s", strings.ToLower(packages[0]), strings.ToLower(packages[1]), strings.ToLower(f.Name))
+			if !enforceWhitelist && len(fieldsFiltered.Protected) > 0 && slices.Contains(fieldsFiltered.Protected, field) {
+				continue
+			} else if enforceWhitelist && slices.Contains(toDelete, field) {
+				continue
+			}
+		}
 
 		if (tag.Ignored != nil) && *tag.Ignored {
 			continue
