@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/schmurfy/chipi/schema"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -155,17 +156,24 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 	// query
 	queryValue := ret.Elem().FieldByName("Query")
 	if queryValue.IsValid() {
-		for k, v := range r.URL.Query() {
-			attributeName := strings.Title(k)
-			f := queryValue.FieldByName(attributeName)
-			if f.IsValid() {
-				path := "request.query." + attributeName
+		for i := 0; i < queryValue.NumField(); i++ {
+
+			queryFieldName := queryValue.Type().Field(i).Name
+			structField, _ := queryValue.Type().FieldByName(queryFieldName)
+
+			// Tag "json" overwrite the key
+			parsedQueryFieldName := schema.ParseJsonTag(structField).Name
+			if parsedQueryFieldName == structField.Name {
+				parsedQueryFieldName = ToSnakeCase(structField.Name)
+			}
+			path := "request.query." + parsedQueryFieldName
+
+			if value, ok := r.URL.Query()[parsedQueryFieldName]; ok {
 				err = setFValue(ctx,
 					path,
-					f,
-					v[0],
+					queryValue.Field(i),
+					value[0],
 				)
-
 				if err != nil {
 					parsingErrors[path] = err.Error()
 					hasParamsErrors = true
@@ -189,14 +197,16 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 				headerName = name
 			}
 			path := "request.header." + attributeName
-			err = setFValue(ctx,
-				path,
-				headerValue.Field(i),
-				r.Header.Get(headerName),
-			)
-			if err != nil {
-				parsingErrors[path] = err.Error()
-				hasParamsErrors = true
+			if value, ok := r.Header[headerName]; ok {
+				err = setFValue(ctx,
+					path,
+					headerValue.Field(i),
+					value[0],
+				)
+				if err != nil {
+					parsingErrors[path] = err.Error()
+					hasParamsErrors = true
+				}
 			}
 		}
 	}
@@ -218,14 +228,22 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			bodyObject = bodyValue.Addr().Interface()
 		}
 
+		path := "request.body"
 		// call the request method if it implements a custom decoder
 		if decoder, ok := ret.Interface().(BodyDecoder); ok {
 			err = decoder.DecodeBody(r.Body, bodyObject, ret)
+			if err != nil {
+				parsingErrors[path] = err.Error()
+				return
+			}
 		} else {
 			err = fmt.Errorf(
 				"structure %s needs to implement BodyDecoder interface",
 				typ.Name(),
 			)
+			if err != nil {
+				parsingErrors[path] = err.Error()
+			}
 			return
 		}
 	}
@@ -258,7 +276,10 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 			if err != nil {
 				data = []byte(`{}`)
 			}
-			http.Error(w, string(data), http.StatusBadRequest)
+			w.Header().Set("content-type", "application/json")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, string(data))
 			return
 		}
 
