@@ -142,7 +142,7 @@ func (s *Schema) generateSchemaFor(doc *openapi3.T, t reflect.Type, inlineLevel 
 		schema.Ref = structReference(t)
 
 	default:
-		return nil, fmt.Errorf("unknwon type: %v", t.Kind())
+		return nil, fmt.Errorf("unknown type: %v", t.Kind())
 	}
 
 	return
