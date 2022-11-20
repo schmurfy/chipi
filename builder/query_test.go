@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -26,10 +27,13 @@ func TestQueryParams(t *testing.T) {
 	g.Describe("Query", func() {
 		var router *chi.Mux
 		var b *Builder
+		var ctx context.Context
 
 		g.BeforeEach(func() {
 			var err error
 			router = chi.NewRouter()
+
+			ctx = context.Background()
 
 			router.Get("/pet", emptyHandler)
 			b, err = New(router, &openapi3.Info{})
@@ -41,7 +45,7 @@ func TestQueryParams(t *testing.T) {
 
 			g.BeforeEach(func() {
 				tt := reflect.TypeOf(testQueryRequest{})
-				err := b.generateQueryParametersDoc(b.swagger, &op, tt)
+				err := b.generateQueryParametersDoc(ctx, b.swagger, &op, tt)
 				require.NoError(g, err)
 			})
 

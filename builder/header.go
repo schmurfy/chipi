@@ -1,13 +1,14 @@
 package builder
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 )
 
-func (b *Builder) generateHeadersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
+func (b *Builder) generateHeadersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
 	headerField, found := requestObjectType.FieldByName("Header")
 	if !found {
 		return nil
@@ -21,7 +22,7 @@ func (b *Builder) generateHeadersDoc(swagger *openapi3.T, op *openapi3.Operation
 	for i := 0; i < headerStructType.NumField(); i++ {
 		field := headerStructType.Field(i)
 
-		schema, err := b.schema.GenerateSchemaFor(swagger, field.Type)
+		schema, err := b.schema.GenerateSchemaFor(ctx, swagger, field.Type)
 		if err != nil {
 			return err
 		}

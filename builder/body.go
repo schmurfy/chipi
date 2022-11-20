@@ -1,18 +1,20 @@
 package builder
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/schmurfy/chipi/schema"
+	"github.com/schmurfy/chipi/shared"
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateBodyDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type) error {
+func (b *Builder) generateBodyDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, filterObject shared.FilterInterface) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
-		bodySchema, err := b.schema.GenerateSchemaFor(swagger, bodyField.Type)
+		bodySchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, bodyField.Type, filterObject)
 		if err != nil {
 			return err
 		}

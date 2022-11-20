@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"context"
 	"net/http"
 	"reflect"
 	"testing"
@@ -29,12 +30,15 @@ func TestParams(t *testing.T) {
 	g.Describe("Params", func() {
 		var router *chi.Mux
 		var b *Builder
+		var ctx context.Context
 
 		g.Describe("single router", func() {
 
 			g.BeforeEach(func() {
 				var err error
 				router = chi.NewRouter()
+
+				ctx = context.Background()
 
 				router.Post("/pet/{Id}/{Name}", emptyHandler)
 				b, err = New(router, &openapi3.Info{})
@@ -48,7 +52,7 @@ func TestParams(t *testing.T) {
 					tt := reflect.TypeOf(testPathRequest{})
 					routeContext := chi.NewRouteContext()
 					require.True(g, router.Match(routeContext, "POST", "/pet/43/Fido"))
-					err := b.generateParametersDoc(b.swagger, &op, tt, "POST", routeContext)
+					err := b.generateParametersDoc(ctx, b.swagger, &op, tt, "POST", routeContext)
 					require.NoError(g, err)
 				})
 

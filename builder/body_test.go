@@ -39,7 +39,9 @@ type bodyTestWithDecoderRequest struct {
 
 	request.JsonBodyDecoder
 	Body struct {
-		Name string
+		Name  string
+		Email string
+		Age   int
 	}
 }
 
@@ -49,10 +51,13 @@ func TestBodyGenerator(t *testing.T) {
 	g.Describe("body generator", func() {
 		var b *Builder
 		var op openapi3.Operation
+		var ctx context.Context
 
 		g.BeforeEach(func() {
 			var err error
 			router := chi.NewRouter()
+
+			ctx = context.Background()
 
 			router.Post("/pet/{Id}/{Name}", emptyHandler)
 			b, err = New(router, &openapi3.Info{})
@@ -61,7 +66,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return an error if structure does not implements BodyDecoder", func() {
 			req := bodyTestWithoutDecoderRequest{}
-			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req))
+			err := b.generateBodyDoc(ctx, b.swagger, &op, &req, reflect.TypeOf(req), nil)
 			require.Error(g, err)
 
 			assert.Contains(g, err.Error(), "must implement BodyDecoder")
@@ -69,7 +74,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return nil if structure implements BodyDecoder", func() {
 			req := bodyTestWithDecoderRequest{}
-			err := b.generateBodyDoc(b.swagger, &op, &req, reflect.TypeOf(req))
+			err := b.generateBodyDoc(ctx, b.swagger, &op, &req, reflect.TypeOf(req), nil)
 			require.NoError(g, err)
 		})
 
