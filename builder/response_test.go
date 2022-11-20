@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -19,9 +20,12 @@ func TestResponse(t *testing.T) {
 	g.Describe("response documentation", func() {
 		var b *Builder
 		var op *openapi3.Operation
+		var ctx context.Context
 
 		g.BeforeEach(func() {
 			var err error
+
+			ctx = context.Background()
 
 			router := chi.NewRouter()
 			b, err = New(router, &openapi3.Info{})
@@ -36,7 +40,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
 			require.Error(g, err)
 			assert.Contains(g, err.Error(), "must implement ResponseEncoder")
 		})
@@ -45,7 +49,7 @@ func TestResponse(t *testing.T) {
 			req := struct {
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
 			responseObj, found := op.Responses["204"]
@@ -61,7 +65,7 @@ func TestResponse(t *testing.T) {
 				} `content-type:"application/pdf"`
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -83,7 +87,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -112,7 +116,7 @@ func TestResponse(t *testing.T) {
 				Response []byte `description:"the requested file"`
 			}{}
 
-			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]

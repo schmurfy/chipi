@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/schmurfy/chipi/internal/testdata/monster"
 	"github.com/schmurfy/chipi/internal/testdata/pet"
+	"github.com/schmurfy/chipi/shared"
 )
 
 type RecursiveGroup struct {
@@ -26,7 +28,7 @@ type RecursiveUser struct {
 	Group *RecursiveGroup
 }
 
-func checkGeneratedType(g *goblin.G, schemaPtr **Schema, docPtr **openapi3.T, value interface{}, expected string) {
+func checkGeneratedType(g *goblin.G, ctx context.Context, schemaPtr **Schema, docPtr **openapi3.T, value interface{}, expected string) {
 	g.It(fmt.Sprintf("should generate inline type for %T", value), func() {
 		s := *schemaPtr
 		doc := *docPtr
@@ -35,7 +37,7 @@ func checkGeneratedType(g *goblin.G, schemaPtr **Schema, docPtr **openapi3.T, va
 		require.NotNil(g, s)
 
 		typ := reflect.TypeOf(value)
-		schema, err := s.GenerateSchemaFor(doc, typ)
+		schema, err := s.GenerateSchemaFor(ctx, doc, typ)
 		require.NoError(g, err)
 
 		data, err := json.Marshal(schema)
@@ -46,15 +48,35 @@ func checkGeneratedType(g *goblin.G, schemaPtr **Schema, docPtr **openapi3.T, va
 
 }
 
+type TestFilter struct {
+	AllowedFields []string
+}
+
+func (f *TestFilter) FilterRoute(ctx context.Context, method string, pattern string) (bool, error) {
+	return false, nil
+}
+
+func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.AttributeInfo) (bool, error) {
+	for _, path := range f.AllowedFields {
+		if path == fieldInfo.Path() {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 func TestSchema(t *testing.T) {
 	g := goblin.Goblin(t)
 
 	g.Describe("schema", func() {
 		var doc *openapi3.T
 		var s *Schema
+		var ctx context.Context
 
 		g.BeforeEach(func() {
 			var err error
+
+			ctx = context.Background()
 
 			doc = &openapi3.T{}
 			s, err = New()
@@ -71,7 +93,7 @@ func TestSchema(t *testing.T) {
 			}
 
 			for value, expected := range tests {
-				checkGeneratedType(g, &s, &doc, value, expected)
+				checkGeneratedType(g, ctx, &s, &doc, value, expected)
 			}
 		})
 
@@ -102,7 +124,7 @@ func TestSchema(t *testing.T) {
 			}
 
 			for _, tt := range tests {
-				checkGeneratedType(g, &s, &doc, tt.Value, tt.Expected)
+				checkGeneratedType(g, ctx, &s, &doc, tt.Value, tt.Expected)
 			}
 		})
 
@@ -115,11 +137,11 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate correct types for same structure name", func() {
 				typ1 := reflect.TypeOf(&monster.QueryResponse{})
-				schema1, err := s.GenerateSchemaFor(doc, typ1)
+				schema1, err := s.GenerateSchemaFor(ctx, doc, typ1)
 				require.NoError(g, err)
 
 				typ2 := reflect.TypeOf(&pet.QueryResponse{})
-				schema2, err := s.GenerateSchemaFor(doc, typ2)
+				schema2, err := s.GenerateSchemaFor(ctx, doc, typ2)
 				require.NoError(g, err)
 
 				assert.NotEqual(g, schema1.Ref, schema2.Ref)
@@ -138,9 +160,39 @@ func TestSchema(t *testing.T) {
 				Users []User
 			}
 
+			g.It("should filter direct fields", func() {
+				filter := &TestFilter{AllowedFields: []string{
+					"user",
+					"user.age",
+				}}
+
+				typ := reflect.TypeOf(&User{})
+				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, filter)
+				require.NoError(g, err)
+
+				data, err := json.Marshal(schema)
+				require.NoError(g, err)
+
+				userSchema, found := doc.Components.Schemas[typeName(typ.Elem())]
+				require.True(g, found)
+
+				data, err = json.Marshal(userSchema)
+				require.NoError(g, err)
+
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"Age": {
+							"type": "integer",
+							"format": "int64"
+						}
+					}
+				}`, string(data))
+			})
+
 			g.It("should generate referenced type for user", func() {
 				typ := reflect.TypeOf(&User{})
-				schema, err := s.GenerateSchemaFor(doc, typ)
+				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -176,7 +228,7 @@ func TestSchema(t *testing.T) {
 
 				g.Timeout(5 * time.Second)
 				typ := reflect.TypeOf(&RecursiveUser{})
-				_, err := s.GenerateSchemaFor(doc, typ)
+				_, err := s.GenerateSchemaFor(ctx, doc, typ)
 				require.NoError(g, err)
 			})
 
@@ -198,7 +250,7 @@ func TestSchema(t *testing.T) {
 				}{}
 
 				typ := reflect.TypeOf(&st)
-				schema, err := s.GenerateSchemaFor(doc, typ)
+				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -217,7 +269,7 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate referenced type for Group with link to User", func() {
 				typ := reflect.TypeOf(&Group{})
-				schema, err := s.GenerateSchemaFor(doc, typ)
+				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -255,7 +307,7 @@ func TestSchema(t *testing.T) {
 				}`, string(data))
 			})
 
-			checkGeneratedType(g, &s, &doc, time.Time{}, `{
+			checkGeneratedType(g, ctx, &s, &doc, time.Time{}, `{
 				"type": "string",
 				"format": "date-time"
 			}`)

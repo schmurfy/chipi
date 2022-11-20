@@ -1,14 +1,15 @@
 package builder
 
 import (
+	"context"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
 	"github.com/schmurfy/chipi/schema"
+	"github.com/schmurfy/chipi/shared"
 	"github.com/schmurfy/chipi/wrapper"
 )
 
@@ -71,7 +72,7 @@ func (b *Builder) AddSecurityRequirement(req openapi3.SecurityRequirement) {
 }
 
 func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
-	data, err := b.GenerateJson(false, []string{""}, []string{""})
+	data, err := b.GenerateJson(r.Context(), nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,21 +83,6 @@ func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-}
-
-func (b *Builder) isAllowedRoute(allowedRoutes []string, method string, pattern string) (bool, error) {
-	for _, r := range allowedRoutes {
-		route := strings.Split(r, " ")
-		if len(route) != 2 {
-			return false, errors.New("invalid route filter : " + r)
-		}
-		if method == route[0] && pattern == route[1] {
-			return true, nil
-		}
-
-	}
-	return false, nil
 }
 
 type CallbackFunc func(http.ResponseWriter, interface{})
@@ -159,7 +145,7 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	return
 }
 
-func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFiltered []string) ([]byte, error) {
+func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterInterface) ([]byte, error) {
 
 	swagger := *b.swagger
 	for _, m := range b.methods {
@@ -178,12 +164,14 @@ func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFilter
 			return nil, err
 		}
 
-		if filter {
-			found, err := b.isAllowedRoute(allowedRoutes, m.method, routeContext.RoutePattern())
+		if filterObject != nil {
+
+			removeRoute, err := filterObject.FilterRoute(ctx, m.method, routeContext.RoutePattern())
 			if err != nil {
 				return nil, err
 			}
-			if !found {
+
+			if removeRoute {
 				continue
 			}
 		}
@@ -197,31 +185,31 @@ func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFilter
 		}
 
 		// URL Parameters
-		err = b.generateParametersDoc(&swagger, op, typ, m.method, routeContext)
+		err = b.generateParametersDoc(ctx, &swagger, op, typ, m.method, routeContext)
 		if err != nil {
 			return nil, err
 		}
 
 		// Query parameters
-		err = b.generateQueryParametersDoc(&swagger, op, typ)
+		err = b.generateQueryParametersDoc(ctx, &swagger, op, typ)
 		if err != nil {
 			return nil, err
 		}
 
 		// Headers
-		err = b.generateHeadersDoc(&swagger, op, typ)
+		err = b.generateHeadersDoc(ctx, &swagger, op, typ)
 		if err != nil {
 			return nil, err
 		}
 
 		// body
-		err = b.generateBodyDoc(&swagger, op, m.reqObject, typ)
+		err = b.generateBodyDoc(ctx, &swagger, op, m.reqObject, typ, filterObject)
 		if err != nil {
 			return nil, err
 		}
 
 		// response
-		err = b.generateResponseDoc(&swagger, op, m.reqObject, typ)
+		err = b.generateResponseDoc(ctx, &swagger, op, m.reqObject, typ)
 		if err != nil {
 			return nil, err
 		}

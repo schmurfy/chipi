@@ -9,6 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/schmurfy/chipi/response"
+	"github.com/schmurfy/chipi/shared"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,6 +33,36 @@ func convertToSwagger(g *goblin.G, data []byte) *openapi3.T {
 	require.Nil(g, err)
 	return swagger
 }
+
+type TestRoute struct {
+	Method  string
+	Pattern string
+}
+
+type TestFilter struct {
+	AllowedRoutes []TestRoute
+	AllowedFields []string
+}
+
+func (f *TestFilter) FilterRoute(ctx context.Context, method string, pattern string) (bool, error) {
+	for _, rr := range f.AllowedRoutes {
+		if (rr.Method == method) && (rr.Pattern == pattern) {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.AttributeInfo) (bool, error) {
+	for _, path := range f.AllowedFields {
+		if path == fieldInfo.Path() {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 func TestBuilder(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("Builder", func() {
@@ -39,10 +70,13 @@ func TestBuilder(t *testing.T) {
 		g.Describe("nested routers", func() {
 			var b *Builder
 			var router *chi.Mux
+			var ctx context.Context
 
 			g.BeforeEach(func() {
 				var err error
 				router = chi.NewRouter()
+
+				ctx = context.Background()
 
 				b, err = New(router, &openapi3.Info{})
 				require.NoError(g, err)
@@ -72,7 +106,7 @@ func TestBuilder(t *testing.T) {
 				})
 
 				g.It("should not filter routes", func() {
-					json, err := b.GenerateJson(false, []string{""}, []string{""})
+					json, err := b.GenerateJson(ctx, nil)
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
@@ -80,7 +114,11 @@ func TestBuilder(t *testing.T) {
 					require.NotNil(g, swagger.Paths[routePath])
 				})
 				g.It("should filter routes", func() {
-					json, err := b.GenerateJson(true, []string{"POST other/route"}, []string{""})
+					filter := TestFilter{AllowedRoutes: []TestRoute{
+						{Method: "POST", Pattern: "other/route"},
+					}}
+
+					json, err := b.GenerateJson(ctx, &filter)
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
@@ -89,7 +127,11 @@ func TestBuilder(t *testing.T) {
 				})
 
 				g.It("should authorize routes", func() {
-					json, err := b.GenerateJson(true, []string{"POST " + routePath}, []string{""})
+					filter := TestFilter{AllowedRoutes: []TestRoute{
+						{Method: "POST", Pattern: routePath},
+					}}
+
+					json, err := b.GenerateJson(ctx, &filter)
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
