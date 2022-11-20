@@ -87,24 +87,24 @@ func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 
 type CallbackFunc func(http.ResponseWriter, interface{})
 
-func (b *Builder) Get(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "GET", reqObject)
-	return
+func (b *Builder) Get(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "GET", reqObject)
 }
 
-func (b *Builder) Post(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "POST", reqObject)
-	return
+func (b *Builder) Post(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "POST", reqObject)
 }
 
-func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "PATCH", reqObject)
-	return
+func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "PATCH", reqObject)
 }
 
-func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "DELETE", reqObject)
-	return
+func (b *Builder) Put(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "PUT", reqObject)
+}
+
+func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "DELETE", reqObject)
 }
 
 func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, error) {
@@ -126,15 +126,19 @@ func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, erro
 	return nil, errors.New("route not found : " + method + " - " + routeExample)
 }
 
-func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (err error) {
+func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) error {
+
+	typ := reflect.TypeOf(reqObject)
+	if (typ.Kind() != reflect.Ptr) || (typ.Elem().Kind() != reflect.Struct) {
+		return errors.New("wrong type, pointer to struct expected")
+	}
 
 	if _, ok := reqObject.(wrapper.HandlerInterface); ok {
 		r.Method(method, pattern, wrapper.WrapRequest(reqObject))
 	} else if rr, ok := reqObject.(rawHandler); ok {
 		r.Method(method, pattern, http.HandlerFunc(rr.Handle))
 	} else {
-		err = errors.Errorf("%T object must implement HandlerInterface interface", reqObject)
-		return
+		return errors.Errorf("%T object must implement HandlerInterface interface", reqObject)
 	}
 
 	b.methods = append(b.methods, &Method{
@@ -142,7 +146,8 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		method:    method,
 		reqObject: reqObject,
 	})
-	return
+
+	return nil
 }
 
 func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterInterface) ([]byte, error) {
@@ -150,14 +155,7 @@ func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterIn
 	swagger := *b.swagger
 	for _, m := range b.methods {
 
-		// analyze parameters if any
-		typ := reflect.TypeOf(m.reqObject)
-		if (typ.Kind() != reflect.Ptr) || (typ.Elem().Kind() != reflect.Struct) {
-			err := errors.New("wrong type, pointer to struct expected")
-			return nil, err
-		}
-
-		typ = typ.Elem()
+		typ := reflect.TypeOf(m.reqObject).Elem()
 
 		routeContext, err := b.findRoute(typ, m.method)
 		if routeContext == nil {

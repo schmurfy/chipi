@@ -29,7 +29,10 @@ type someData struct {
 type sharedDecoder struct{}
 
 func (r *sharedDecoder) DecodeBody(body io.ReadCloser, target interface{}, obj interface{}) error {
-	data := target.(*someData)
+	data, ok := target.(*someData)
+	if !ok {
+		return fmt.Errorf("invalid type: %T", target)
+	}
 	data.Str = "some great string !"
 
 	return nil

@@ -35,3 +35,6 @@ example: build
 
 validate-example:
 	npx @redocly/openapi-cli lint http://127.0.0.1:2121/doc.json
+
+lint:
+	golangci-lint run

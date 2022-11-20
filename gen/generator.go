@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,7 +54,7 @@ func InspectDir(path string, noWrite bool) error {
 func generateDataForFile(path string, noWrite bool) error {
 	fset := token.NewFileSet()
 
-	data, err := ioutil.ReadFile(path + ".go")
+	data, err := os.ReadFile(path + ".go")
 	if err != nil {
 		panic(err)
 	}

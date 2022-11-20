@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/dave/dst"
@@ -37,7 +37,7 @@ func TestGenerator(t *testing.T) {
 		g.BeforeEach(func() {
 			var err error
 
-			data, err := ioutil.ReadFile("../internal/testdata/monster/monster.go")
+			data, err := os.ReadFile("../internal/testdata/monster/monster.go")
 			require.NoError(g, err)
 
 			fs = token.NewFileSet()
@@ -68,7 +68,7 @@ func TestGenerator(t *testing.T) {
 					{"GetMonsterRequest", "Response", "", data("what is returned")},
 				}
 
-				inspectStructures(f, func(parentStructName string, sectionName string, fieldName string, data map[string]string) error {
+				err := inspectStructures(f, func(parentStructName string, sectionName string, fieldName string, data map[string]string) error {
 					if pos >= len(expected) {
 						g.Failf("expected too short (index: %d)", pos)
 					}
@@ -82,6 +82,7 @@ func TestGenerator(t *testing.T) {
 					return nil
 				})
 
+				require.NoError(g, err)
 				assert.Equal(g, 7, pos)
 
 			})
