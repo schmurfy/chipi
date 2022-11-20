@@ -76,16 +76,30 @@ func main() {
 
 		defer f.Close()
 
-		io.Copy(w, f)
+		_, err = io.Copy(w, f)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 	})
 
 	router.Get("/redoc", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(redocFile)
+		_, err := w.Write(redocFile)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	router.Get("/doc", func(w http.ResponseWriter, r *http.Request) {
 		// embed
-		w.Write(indexFile)
+		_, err := w.Write(indexFile)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 	})
 
 	r := router.Group(func(r chi.Router) {

@@ -1,0 +1,77 @@
+run:
+  skip-dirs:
+    - generated_pb
+    - example
+  skip-files:
+    - ".*\\.generated.go"
+
+linter-settings:
+  unused:
+    check-exported: true
+  tagliatelle:
+    case:
+      #! use-field-name: true
+      rules:
+        json: goSnake
+
+linters:
+  disable-all: true
+  enable:
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - dogsled
+    - dupl
+    #! - funlen
+    #! - gochecknoglobals
+    - goconst # find string that could be constants
+    - errcheck
+    # - gochecknoinits
+    - gocritic
+    - goimports
+    - gomnd
+    - gosec
+    #! - fieldalignment # find problem with structure memory alignement
+    - misspell
+    - prealloc
+    - exportloopref
+    #! - stylecheck
+    - unconvert
+    - containedctx
+    - contextcheck
+    #! - cyclop
+    - decorder
+    - dupword
+    - errname
+    - errorlint
+    - execinquery
+    - exhaustive
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - goconst
+    - gocritic
+    - godox
+    #! - goerr113
+    - gomoddirectives
+    - grouper
+    - importas
+    - ireturn
+    #! - lll
+    - loggercheck
+    - nestif
+    - nilerr
+    - noctx
+    - nonamedreturns
+    - prealloc
+    - predeclared
+    - promlinter
+    - reassign
+    #! - tagliatelle # config ignored
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - whitespace

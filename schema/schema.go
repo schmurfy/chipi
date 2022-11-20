@@ -22,19 +22,15 @@ func New() (*Schema, error) {
 	return &Schema{}, nil
 }
 
-func (s *Schema) GenerateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type) (schema *openapi3.SchemaRef, err error) {
+func (s *Schema) GenerateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type) (*openapi3.SchemaRef, error) {
 	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, nil)
 }
 
-func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, filterObject shared.FilterInterface) (schema *openapi3.SchemaRef, err error) {
+func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, filterObject shared.FilterInterface) (*openapi3.SchemaRef, error) {
 	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, filterObject)
 }
 
-func typeToName(t reflect.Type) string {
-	return strings.ToLower(t.Name())
-}
-
-func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (schema *openapi3.SchemaRef, err error) {
+func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.SchemaRef, error) {
 	fullName := typeName(t)
 
 	if (filterObject != nil) && !fieldInfo.Empty() {
@@ -55,7 +51,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		}
 	}
 
-	schema = &openapi3.SchemaRef{}
+	schema := &openapi3.SchemaRef{}
 
 	// test pointed value for pointers
 	for t.Kind() == reflect.Ptr {
@@ -86,7 +82,6 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 
 	// complex types
 	case reflect.Slice:
-		var items *openapi3.SchemaRef
 
 		// []byte
 		if t.Elem().Kind() == reflect.Uint8 {
@@ -96,7 +91,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			}
 
 		} else {
-			items, err = s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, filterObject)
+			items, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, filterObject)
 			if err != nil {
 				return nil, err
 			}
@@ -129,7 +124,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 	case reflect.Struct:
 		if t == _timeType {
 			schema.Value = openapi3.NewDateTimeSchema()
-			return
+			return schema, nil
 		}
 
 		if doc.Components.Schemas == nil {
@@ -138,15 +133,15 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 
 		// if we have an anonymous structure, inline it and stop there
 		if (t.Name() == "") || (inlineLevel > 0) {
+			var err error
 			schema.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, filterObject)
-			// return wether an error occurred ot not so don't bother
-			// checking err which will be returned anyway
-			return
+			return schema, err
 		}
 
 		// check if the structure already exists as component first
 		_, found := doc.Components.Schemas[fullName]
 		if !found {
+			var err error
 			ref := &openapi3.SchemaRef{}
 
 			// forward declaration of the current type to handle recursion properly
@@ -155,7 +150,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			// fmt.Printf("%s - BEFORE: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 			ref.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, filterObject)
 			if err != nil {
-				return
+				return nil, err
 			}
 			// fmt.Printf("%s - AFTER: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 		}
@@ -166,7 +161,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		return nil, fmt.Errorf("unknown type: %v", t.Kind())
 	}
 
-	return
+	return schema, nil
 }
 
 func typeName(t reflect.Type) string {

@@ -6,11 +6,13 @@ import (
 	"strings"
 )
 
+// unused for now,
 type AttributeScope int
 
 const (
-	SCOPE_REQUEST_BODY = iota
-	SCOPE_RESPONSE_BODY
+	ScopeNone = iota
+	// ScopeRequestBody
+	// ScopeRequestResponse
 )
 
 type AttributeInfo struct {

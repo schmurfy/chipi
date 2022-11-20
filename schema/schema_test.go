@@ -170,13 +170,13 @@ func TestSchema(t *testing.T) {
 				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, filter)
 				require.NoError(g, err)
 
-				data, err := json.Marshal(schema)
+				_, err = json.Marshal(schema)
 				require.NoError(g, err)
 
 				userSchema, found := doc.Components.Schemas[typeName(typ.Elem())]
 				require.True(g, found)
 
-				data, err = json.Marshal(userSchema)
+				data, err := json.Marshal(userSchema)
 				require.NoError(g, err)
 
 				assert.JSONEq(g, `{
@@ -282,10 +282,10 @@ func TestSchema(t *testing.T) {
 
 				// check that the User schema was added as component
 
-				userSchema, found := doc.Components.Schemas[typeName(reflect.TypeOf(&User{}))]
+				_, found := doc.Components.Schemas[typeName(reflect.TypeOf(&User{}))]
 				require.True(g, found)
 
-				userSchema, found = doc.Components.Schemas[typeName(typ)]
+				userSchema, found := doc.Components.Schemas[typeName(typ)]
 				require.True(g, found)
 
 				data, err = json.Marshal(userSchema)
