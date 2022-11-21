@@ -54,7 +54,12 @@ func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operatio
 		}
 	} else {
 		// if no response provided generate a default 204 code response
-		responses["204"] = &openapi3.ResponseRef{}
+		noData := "no data"
+		responses["204"] = &openapi3.ResponseRef{
+			Value: &openapi3.Response{
+				Description: &noData,
+			},
+		}
 	}
 
 	op.Responses = responses

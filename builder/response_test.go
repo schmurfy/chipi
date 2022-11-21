@@ -48,8 +48,9 @@ func TestResponse(t *testing.T) {
 			err := b.generateResponseDoc(b.swagger, op, &req, reflect.TypeOf(req))
 			require.NoError(g, err)
 
-			_, found := op.Responses["204"]
+			responseObj, found := op.Responses["204"]
 			require.True(g, found)
+			require.NotNil(g, responseObj)
 		})
 
 		g.It("should allow custom content-type", func() {
