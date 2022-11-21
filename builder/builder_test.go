@@ -56,7 +56,7 @@ func (f *TestFilter) FilterRoute(ctx context.Context, method string, pattern str
 
 func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.AttributeInfo) (bool, error) {
 	for _, path := range f.AllowedFields {
-		if path == fieldInfo.Path() {
+		if path == fieldInfo.QueryPath() {
 			return false, nil
 		}
 	}
