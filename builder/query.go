@@ -7,7 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	"github.com/schmurfy/chipi/schema"
-	"github.com/schmurfy/chipi/wrapper"
+	"github.com/schmurfy/chipi/shared"
 )
 
 func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
@@ -31,7 +31,7 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 
 		name := schema.ParseJsonTag(field).Name
 		if name == field.Name {
-			name = wrapper.ToSnakeCase(field.Name)
+			name = shared.ToSnakeCase(field.Name)
 		}
 
 		param := openapi3.NewQueryParameter(name)
