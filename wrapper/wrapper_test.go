@@ -55,7 +55,6 @@ func TestWrapper(t *testing.T) {
 	g := goblin.Goblin(t)
 
 	g.Describe("Wrapper", func() {
-
 		g.Describe("setFieldValue", func() {
 			type loc struct {
 				Type string
@@ -254,7 +253,6 @@ func TestWrapper(t *testing.T) {
 		})
 
 		g.Describe("custom body decoder", func() {
-
 			g.It("should be called", func() {
 				rctx := chi.NewRouteContext()
 				ctx := context.WithValue(context.Background(), chi.RouteCtxKey, rctx)

@@ -15,7 +15,7 @@ build:
 test-tools:
 
 test: test-tools
-	go test --tags=test $(TEST_PACKAGE) $(filter)
+	go test -v --tags=test $(TEST_PACKAGE) $(filter)
 
 
 COVERAGE_OUT:=/tmp/cover
