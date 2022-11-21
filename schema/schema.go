@@ -175,12 +175,21 @@ func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
+func pkgName(t reflect.Type) string {
+	parts := strings.Split(t.PkgPath(), "/")
+
+	return parts[len(parts)-1]
+}
+
 func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}
 
-	fieldInfo = fieldInfo.AppendPath(strings.ToLower(t.Name()))
+	pkgName := shared.ToSnakeCase(pkgName(t))
+	structName := shared.ToSnakeCase(t.Name())
+
+	fieldInfo = fieldInfo.AppendPath(structName)
 
 	if filterObject != nil {
 		filter, err := filterObject.FilterField(ctx, fieldInfo)
@@ -201,7 +210,12 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			continue
 		}
 
-		fieldSchema, err := s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fieldInfo.AppendPath(strings.ToLower(f.Name)), filterObject)
+		fieldName := shared.ToSnakeCase(f.Name)
+		fi := fieldInfo.
+			WithModelPath(pkgName + "." + structName + "." + fieldName).
+			AppendPath(fieldName)
+
+		fieldSchema, err := s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, filterObject)
 		if err != nil {
 			return nil, err
 		}

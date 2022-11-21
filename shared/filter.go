@@ -16,26 +16,37 @@ const (
 )
 
 type AttributeInfo struct {
-	Scope AttributeScope
-	path  []string
+	Scope     AttributeScope
+	queryPath []string
+	modelPath string
 }
 
 func (ai AttributeInfo) String() string {
-	return fmt.Sprintf("[%+v] <%s>", ai.Scope, ai.Path())
+	return fmt.Sprintf("[%+v] <%s> <%s>", ai.Scope, ai.QueryPath(), ai.ModelPath())
 }
 
 func (ai AttributeInfo) Empty() bool {
-	return len(ai.path) == 0
+	return len(ai.queryPath) == 0
 }
 
-func (ai AttributeInfo) Path() string {
-	return strings.Join(ai.path, ".")
+func (ai AttributeInfo) QueryPath() string {
+	return strings.Join(ai.queryPath, ".")
+}
+
+func (ai AttributeInfo) WithModelPath(path string) AttributeInfo {
+	ai.modelPath = path
+	return ai
+}
+
+func (ai AttributeInfo) ModelPath() string {
+	return ai.modelPath
 }
 
 func (ai AttributeInfo) AppendPath(segment string) AttributeInfo {
 	return AttributeInfo{
-		Scope: ai.Scope,
-		path:  append(ai.path, segment),
+		Scope:     ai.Scope,
+		queryPath: append(ai.queryPath, segment),
+		modelPath: ai.modelPath,
 	}
 }
 
