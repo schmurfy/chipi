@@ -40,7 +40,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
 			require.Error(g, err)
 			assert.Contains(g, err.Error(), "must implement ResponseEncoder")
 		})
@@ -49,7 +49,7 @@ func TestResponse(t *testing.T) {
 			req := struct {
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
 			require.NoError(g, err)
 
 			responseObj, found := op.Responses["204"]
@@ -65,7 +65,7 @@ func TestResponse(t *testing.T) {
 				} `content-type:"application/pdf"`
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -87,7 +87,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -116,7 +116,7 @@ func TestResponse(t *testing.T) {
 				Response []byte `description:"the requested file"`
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req))
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]

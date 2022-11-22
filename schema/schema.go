@@ -33,7 +33,7 @@ func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T,
 func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.SchemaRef, error) {
 	fullName := typeName(t)
 
-	if (filterObject != nil) && !fieldInfo.Empty() {
+	if (filterObject != nil && !reflect.ValueOf(filterObject).IsNil()) && !fieldInfo.Empty() {
 		filter, err := filterObject.FilterField(ctx, fieldInfo)
 		if err != nil {
 			return nil, err
@@ -191,7 +191,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 
 	fieldInfo = fieldInfo.AppendPath(structName)
 
-	if filterObject != nil {
+	if filterObject != nil && !reflect.ValueOf(filterObject).IsNil() {
 		filter, err := filterObject.FilterField(ctx, fieldInfo)
 		if err != nil {
 			return nil, err

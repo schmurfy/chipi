@@ -162,8 +162,7 @@ func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterIn
 			return nil, err
 		}
 
-		if filterObject != nil {
-
+		if filterObject != nil && !reflect.ValueOf(filterObject).IsNil() {
 			removeRoute, err := filterObject.FilterRoute(ctx, m.method, routeContext.RoutePattern())
 			if err != nil {
 				return nil, err
@@ -207,7 +206,7 @@ func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterIn
 		}
 
 		// response
-		err = b.generateResponseDoc(ctx, &swagger, op, m.reqObject, typ)
+		err = b.generateResponseDoc(ctx, &swagger, op, m.reqObject, typ, filterObject)
 		if err != nil {
 			return nil, err
 		}
