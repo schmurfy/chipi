@@ -164,6 +164,10 @@ func TestWrapper(t *testing.T) {
 					Tag                       string `json:"tag,omitempty"`
 				}
 
+				Header struct {
+					XZoovClientId string `name:"X-Zoov-ClientId"`
+				}
+
 				PrivateString string
 			}
 
@@ -179,6 +183,8 @@ func TestWrapper(t *testing.T) {
 				req = httptest.NewRequest("GET", "/user", nil)
 				rctx = chi.NewRouteContext()
 				req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+				req.Header.Set("X-Zoov-ClientId", "azerty")
 
 				// path
 				rctx.URLParams.Add("Id", "42")
@@ -211,6 +217,10 @@ func TestWrapper(t *testing.T) {
 				reqObject, ok = vv.Interface().(*testRequest)
 				require.True(g, ok)
 
+			})
+
+			g.It("should get param from header", func() {
+				assert.Equal(g, "azerty", reqObject.Header.XZoovClientId)
 			})
 
 			g.It("should fill wrapper with path variables", func() {
