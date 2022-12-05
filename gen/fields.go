@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/dave/dst"
+	"github.com/schmurfy/chipi/shared"
 )
 
 type commentedField struct {
@@ -69,7 +70,7 @@ func GenerateFieldAnnotations(w io.Writer, f *dst.File, pkgName string) error {
 		}
 
 		if sectionName == "Query" {
-			fieldName = strings.ToLower(fieldName)
+			fieldName = shared.ToSnakeCase(fieldName)
 		}
 
 		cf := commentedField{
