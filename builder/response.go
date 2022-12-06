@@ -1,15 +1,17 @@
 package builder
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/schmurfy/chipi/schema"
+	"github.com/schmurfy/chipi/shared"
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type) error {
+func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, filterObject shared.FilterInterface) error {
 	responses := make(openapi3.Responses)
 
 	responseField, found := requestObjectType.FieldByName("Response")
@@ -37,7 +39,7 @@ func (b *Builder) generateResponseDoc(swagger *openapi3.T, op *openapi3.Operatio
 		}
 
 		if typ.Kind() == reflect.Struct {
-			responseSchema, err := b.schema.GenerateSchemaFor(swagger, typ)
+			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, filterObject)
 			if err != nil {
 				return err
 			}

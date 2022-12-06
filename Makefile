@@ -15,7 +15,7 @@ build:
 test-tools:
 
 test: test-tools
-	go test --tags=test $(TEST_PACKAGE) $(filter)
+	go test -v --tags=test $(TEST_PACKAGE) $(filter)
 
 
 COVERAGE_OUT:=/tmp/cover
@@ -35,3 +35,6 @@ example: build
 
 validate-example:
 	npx @redocly/openapi-cli lint http://127.0.0.1:2121/doc.json
+
+lint:
+	golangci-lint run

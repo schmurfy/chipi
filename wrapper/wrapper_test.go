@@ -29,7 +29,10 @@ type someData struct {
 type sharedDecoder struct{}
 
 func (r *sharedDecoder) DecodeBody(body io.ReadCloser, target interface{}, obj interface{}) error {
-	data := target.(*someData)
+	data, ok := target.(*someData)
+	if !ok {
+		return fmt.Errorf("invalid type: %T", target)
+	}
 	data.Str = "some great string !"
 
 	return nil
@@ -52,7 +55,6 @@ func TestWrapper(t *testing.T) {
 	g := goblin.Goblin(t)
 
 	g.Describe("Wrapper", func() {
-
 		g.Describe("setFieldValue", func() {
 			type loc struct {
 				Type string
@@ -162,6 +164,10 @@ func TestWrapper(t *testing.T) {
 					Tag                       string `json:"tag,omitempty"`
 				}
 
+				Header struct {
+					XZoovClientId string `name:"X-Zoov-ClientId"`
+				}
+
 				PrivateString string
 			}
 
@@ -177,6 +183,8 @@ func TestWrapper(t *testing.T) {
 				req = httptest.NewRequest("GET", "/user", nil)
 				rctx = chi.NewRouteContext()
 				req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+				req.Header.Set("X-Zoov-ClientId", "azerty")
 
 				// path
 				rctx.URLParams.Add("Id", "42")
@@ -209,6 +217,10 @@ func TestWrapper(t *testing.T) {
 				reqObject, ok = vv.Interface().(*testRequest)
 				require.True(g, ok)
 
+			})
+
+			g.It("should get param from header", func() {
+				assert.Equal(g, "azerty", reqObject.Header.XZoovClientId)
 			})
 
 			g.It("should fill wrapper with path variables", func() {
@@ -251,7 +263,6 @@ func TestWrapper(t *testing.T) {
 		})
 
 		g.Describe("custom body decoder", func() {
-
 			g.It("should be called", func() {
 				rctx := chi.NewRouteContext()
 				ctx := context.WithValue(context.Background(), chi.RouteCtxKey, rctx)

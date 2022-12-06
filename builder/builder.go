@@ -1,14 +1,15 @@
 package builder
 
 import (
+	"context"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
 	"github.com/schmurfy/chipi/schema"
+	"github.com/schmurfy/chipi/shared"
 	"github.com/schmurfy/chipi/wrapper"
 )
 
@@ -71,7 +72,7 @@ func (b *Builder) AddSecurityRequirement(req openapi3.SecurityRequirement) {
 }
 
 func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
-	data, err := b.GenerateJson(false, []string{""}, []string{""})
+	data, err := b.GenerateJson(r.Context(), nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,43 +83,28 @@ func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-}
-
-func (b *Builder) isAllowedRoute(allowedRoutes []string, method string, pattern string) (bool, error) {
-	for _, r := range allowedRoutes {
-		route := strings.Split(r, " ")
-		if len(route) != 2 {
-			return false, errors.New("invalid route filter : " + r)
-		}
-		if method == route[0] && pattern == route[1] {
-			return true, nil
-		}
-
-	}
-	return false, nil
 }
 
 type CallbackFunc func(http.ResponseWriter, interface{})
 
-func (b *Builder) Get(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "GET", reqObject)
-	return
+func (b *Builder) Get(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "GET", reqObject)
 }
 
-func (b *Builder) Post(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "POST", reqObject)
-	return
+func (b *Builder) Post(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "POST", reqObject)
 }
 
-func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "PATCH", reqObject)
-	return
+func (b *Builder) Patch(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "PATCH", reqObject)
 }
 
-func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) (err error) {
-	err = b.Method(r, pattern, "DELETE", reqObject)
-	return
+func (b *Builder) Put(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "PUT", reqObject)
+}
+
+func (b *Builder) Delete(r chi.Router, pattern string, reqObject interface{}) error {
+	return b.Method(r, pattern, "DELETE", reqObject)
 }
 
 func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, error) {
@@ -140,15 +126,19 @@ func (b *Builder) findRoute(typ reflect.Type, method string) (*chi.Context, erro
 	return nil, errors.New("route not found : " + method + " - " + routeExample)
 }
 
-func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) (err error) {
+func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject interface{}) error {
+
+	typ := reflect.TypeOf(reqObject)
+	if (typ.Kind() != reflect.Ptr) || (typ.Elem().Kind() != reflect.Struct) {
+		return errors.New("wrong type, pointer to struct expected")
+	}
 
 	if _, ok := reqObject.(wrapper.HandlerInterface); ok {
 		r.Method(method, pattern, wrapper.WrapRequest(reqObject))
 	} else if rr, ok := reqObject.(rawHandler); ok {
 		r.Method(method, pattern, http.HandlerFunc(rr.Handle))
 	} else {
-		err = errors.Errorf("%T object must implement HandlerInterface interface", reqObject)
-		return
+		return errors.Errorf("%T object must implement HandlerInterface interface", reqObject)
 	}
 
 	b.methods = append(b.methods, &Method{
@@ -156,34 +146,29 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 		method:    method,
 		reqObject: reqObject,
 	})
-	return
+
+	return nil
 }
 
-func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFiltered []string) ([]byte, error) {
+func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterInterface) ([]byte, error) {
 
 	swagger := *b.swagger
 	for _, m := range b.methods {
 
-		// analyze parameters if any
-		typ := reflect.TypeOf(m.reqObject)
-		if (typ.Kind() != reflect.Ptr) || (typ.Elem().Kind() != reflect.Struct) {
-			err := errors.New("wrong type, pointer to struct expected")
-			return nil, err
-		}
-
-		typ = typ.Elem()
+		typ := reflect.TypeOf(m.reqObject).Elem()
 
 		routeContext, err := b.findRoute(typ, m.method)
 		if routeContext == nil {
 			return nil, err
 		}
 
-		if filter {
-			found, err := b.isAllowedRoute(allowedRoutes, m.method, routeContext.RoutePattern())
+		if filterObject != nil && !reflect.ValueOf(filterObject).IsNil() {
+			removeRoute, err := filterObject.FilterRoute(ctx, m.method, routeContext.RoutePattern())
 			if err != nil {
 				return nil, err
 			}
-			if !found {
+
+			if removeRoute {
 				continue
 			}
 		}
@@ -197,31 +182,31 @@ func (b *Builder) GenerateJson(filter bool, allowedRoutes []string, fieldsFilter
 		}
 
 		// URL Parameters
-		err = b.generateParametersDoc(&swagger, op, typ, m.method, routeContext)
+		err = b.generateParametersDoc(ctx, &swagger, op, typ, m.method, routeContext)
 		if err != nil {
 			return nil, err
 		}
 
 		// Query parameters
-		err = b.generateQueryParametersDoc(&swagger, op, typ)
+		err = b.generateQueryParametersDoc(ctx, &swagger, op, typ)
 		if err != nil {
 			return nil, err
 		}
 
 		// Headers
-		err = b.generateHeadersDoc(&swagger, op, typ)
+		err = b.generateHeadersDoc(ctx, &swagger, op, typ)
 		if err != nil {
 			return nil, err
 		}
 
 		// body
-		err = b.generateBodyDoc(&swagger, op, m.reqObject, typ)
+		err = b.generateBodyDoc(ctx, &swagger, op, m.reqObject, typ, filterObject)
 		if err != nil {
 			return nil, err
 		}
 
 		// response
-		err = b.generateResponseDoc(&swagger, op, m.reqObject, typ)
+		err = b.generateResponseDoc(ctx, &swagger, op, m.reqObject, typ, filterObject)
 		if err != nil {
 			return nil, err
 		}

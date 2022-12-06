@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os"
 
 	"github.com/dave/dst"
@@ -33,7 +32,7 @@ func main() {
 
 	os.Exit(0)
 
-	data, err := ioutil.ReadFile("./example/pet.go")
+	data, err := os.ReadFile("./example/pet.go")
 	if err != nil {
 		panic(err)
 	}

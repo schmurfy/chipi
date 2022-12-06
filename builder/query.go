@@ -1,15 +1,16 @@
 package builder
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	"github.com/schmurfy/chipi/schema"
-	"github.com/schmurfy/chipi/wrapper"
+	"github.com/schmurfy/chipi/shared"
 )
 
-func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
+func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
 	pathField, found := requestObjectType.FieldByName("Query")
 	if !found {
 		return nil
@@ -23,14 +24,14 @@ func (b *Builder) generateQueryParametersDoc(swagger *openapi3.T, op *openapi3.O
 	for i := 0; i < queryStructType.NumField(); i++ {
 		field := queryStructType.Field(i)
 
-		fieldSchema, err := b.schema.GenerateSchemaFor(swagger, field.Type)
+		fieldSchema, err := b.schema.GenerateSchemaFor(ctx, swagger, field.Type)
 		if err != nil {
 			return err
 		}
 
 		name := schema.ParseJsonTag(field).Name
 		if name == field.Name {
-			name = wrapper.ToSnakeCase(field.Name)
+			name = shared.ToSnakeCase(field.Name)
 		}
 
 		param := openapi3.NewQueryParameter(name)
