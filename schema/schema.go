@@ -237,6 +237,10 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 
 				fieldSchema.Value = openapi3.NewSchema()
 				fieldSchema.Value.Nullable = *tag.Nullable
+
+				if tag.Description != nil {
+					fieldSchema.Value.Description = *tag.Description
+				}
 			}
 
 			// fmt.Printf("wtf: %s.%s (%s)\n", t.Name(), f.Name, fieldSchema.Ref)
@@ -245,7 +249,12 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			fieldSchema.Value.ReadOnly = (tag.ReadOnly != nil) && *tag.ReadOnly
 			fieldSchema.Value.Nullable = (tag.Nullable != nil) && *tag.Nullable
 			fieldSchema.Value.Deprecated = (tag.Deprecated != nil) && *tag.Deprecated
-
+			if tag.Description != nil {
+				fieldSchema.Value.Description = *tag.Description
+			}
+			if tag.Example != nil {
+				fieldSchema.Value.Example = *tag.Example
+			}
 			// if f.Name == "Coordinates" {
 			// 	fmt.Printf("[DD] %s.%s : %+v\n", t.Name(), f.Name, tag)
 			// }

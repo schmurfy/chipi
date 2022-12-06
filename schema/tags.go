@@ -20,6 +20,7 @@ type jsonTag struct {
 	// self contained
 	Explode     *bool
 	Description *string
+	Example     *string
 	Style       *string
 }
 
@@ -64,6 +65,10 @@ func ParseJsonTag(f reflect.StructField) *jsonTag {
 
 	if val, found := f.Tag.Lookup("description"); found {
 		ret.Description = stringPtr(val)
+	}
+
+	if val, found := f.Tag.Lookup("example"); found {
+		ret.Example = stringPtr(val)
 	}
 
 	if val, found := f.Tag.Lookup("style"); found {
