@@ -111,6 +111,10 @@ Special tags can be used on structure's fields to set specific behaviors:
   - `chipi:"nullable"`
 - deprecated
   - `chipi:"deprecated"`
+- example
+  - `example:"field example"`
+- description
+  - `description:"field description"`
 
 ### Path
 
