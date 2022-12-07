@@ -109,6 +109,8 @@ Special tags can be used on structure's fields to set specific behaviors:
   - `chipi:"writeonly"`
 - nullable: the field can be set to `null`
   - `chipi:"nullable"`
+- required
+  - `chipi:"required"`
 - deprecated
   - `chipi:"deprecated"`
 - example
