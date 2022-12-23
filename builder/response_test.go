@@ -14,6 +14,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type Parent struct {
+	Inline
+	Field3 string
+	Field4 int
+}
+
+type Inline struct {
+	Field1 string
+	Field2 int
+}
+
 func TestResponse(t *testing.T) {
 	g := goblin.Goblin(t)
 
@@ -128,5 +139,18 @@ func TestResponse(t *testing.T) {
 			require.Nil(g, mediaType)
 		})
 
+		g.It("should embed Inline struct", func() {
+			req := struct {
+				response.JsonEncoder
+				Response Parent
+			}{}
+
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			require.NoError(g, err)
+
+			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()])
+			require.Len(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()].Value.Properties, 4)
+			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()].Value.Properties["Field1"])
+		})
 	})
 }
