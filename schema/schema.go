@@ -44,13 +44,6 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		}
 	}
 
-	if doc.Components.Schemas != nil {
-		cached, found := doc.Components.Schemas[fullName]
-		if found {
-			return cached, nil
-		}
-	}
-
 	schema := &openapi3.SchemaRef{}
 
 	// test pointed value for pointers
@@ -221,6 +214,16 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 		}
 
 		if fieldSchema == nil {
+			continue
+		}
+
+		//Detect if field is anonymous, look into the schemas and use the same property
+		if f.Anonymous && fieldSchema.Ref != "" && doc.Components.Schemas[f.Type.String()] != nil && doc.Components.Schemas[f.Type.String()].Value != nil {
+			for name, property := range doc.Components.Schemas[f.Type.String()].Value.Properties {
+				ret.WithPropertyRef(name, property)
+			}
+
+			//Ignore the anonymous field
 			continue
 		}
 
