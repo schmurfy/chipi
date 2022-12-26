@@ -17,12 +17,12 @@ import (
 type Parent struct {
 	Inline
 	Field3 string
-	Field4 int
+	Field4 int `json:"field4"`
 }
 
 type Inline struct {
 	Field1 string
-	Field2 int
+	Field2 int `json:"field2"`
 }
 
 func TestResponse(t *testing.T) {
@@ -151,6 +151,9 @@ func TestResponse(t *testing.T) {
 			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()])
 			require.Len(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()].Value.Properties, 4)
 			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()].Value.Properties["Field1"])
+			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()].Value.Properties["field2"])
+			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()].Value.Properties["Field3"])
+			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()].Value.Properties["field4"])
 		})
 	})
 }
