@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,7 +13,8 @@ import (
 )
 
 var (
-	_timeType = reflect.TypeOf(time.Time{})
+	_timeType         = reflect.TypeOf(time.Time{})
+	_genericTypeRegex = regexp.MustCompile(`(.+)\[(.+)\]`)
 )
 
 type Schema struct {
@@ -161,17 +163,32 @@ func typeName(t reflect.Type) string {
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
-	return t.String()
+
+	typeName := t.String()
+
+	// When using generic structures reflect's type name looks something like
+	// module.genericStruct[full/module/path/module.subType]
+	// OpenAPI does not support "[]" or "/", so we replace this by module.genericStruct..module.subType
+	match := _genericTypeRegex.FindStringSubmatch(typeName)
+	if match == nil {
+		return typeName
+	} else {
+		return fmt.Sprintf("%s..%s", match[1], pkgName(match[2]))
+	}
 }
 
 func structReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
-func pkgName(t reflect.Type) string {
-	parts := strings.Split(t.PkgPath(), "/")
+func pkgName(p string) string {
+	parts := strings.Split(p, "/")
 
 	return parts[len(parts)-1]
+}
+
+func typePkgName(t reflect.Type) string {
+	return pkgName(t.PkgPath())
 }
 
 func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.Schema, error) {
@@ -179,7 +196,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 		Type: "object",
 	}
 
-	pkgName := shared.ToSnakeCase(pkgName(t))
+	pkgName := shared.ToSnakeCase(typePkgName(t))
 	structName := shared.ToSnakeCase(t.Name())
 
 	fieldInfo = fieldInfo.AppendPath(structName)
@@ -197,6 +214,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
+		fTypeName := typeName(f.Type)
 		tag := ParseJsonTag(f)
 
 		if (tag.Ignored != nil) && *tag.Ignored {
@@ -218,8 +236,8 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 		}
 
 		//Detect if field is anonymous, look into the schemas and use the same property
-		if f.Anonymous && fieldSchema.Ref != "" && doc.Components.Schemas[f.Type.String()] != nil && doc.Components.Schemas[f.Type.String()].Value != nil {
-			for name, property := range doc.Components.Schemas[f.Type.String()].Value.Properties {
+		if f.Anonymous && fieldSchema.Ref != "" && doc.Components.Schemas[fTypeName] != nil && doc.Components.Schemas[fTypeName].Value != nil {
+			for name, property := range doc.Components.Schemas[fTypeName].Value.Properties {
 				ret.WithPropertyRef(name, property)
 			}
 

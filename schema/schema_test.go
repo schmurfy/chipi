@@ -28,6 +28,14 @@ type RecursiveUser struct {
 	Group *RecursiveGroup
 }
 
+type Generic[T any] struct {
+	Name  string
+	Value T
+}
+
+type Embedded struct {
+}
+
 func checkGeneratedType(g *goblin.G, ctx context.Context, schemaPtr **Schema, docPtr **openapi3.T, value interface{}, expected string) {
 	g.It(fmt.Sprintf("should generate inline type for %T", value), func() {
 		s := *schemaPtr
@@ -311,6 +319,41 @@ func TestSchema(t *testing.T) {
 				"type": "string",
 				"format": "date-time"
 			}`)
+
+			g.It("should generate valid name for generic structures", func() {
+				st := Generic[Embedded]{
+					Name: "john",
+				}
+				typ := reflect.TypeOf(&st)
+				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
+				require.NoError(g, err)
+
+				data, err := json.Marshal(schema)
+				require.NoError(g, err)
+				// check returned schema
+				assert.JSONEq(g, `{
+					"$ref": "#/components/schemas/schema.Generic..schema.Embedded"
+				}`, string(data))
+
+				userSchema, found := doc.Components.Schemas[typeName(typ.Elem())]
+				require.True(g, found)
+
+				data, err = json.Marshal(userSchema)
+				require.NoError(g, err)
+
+				// check returned schema
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"Name": {
+							"type": "string"
+						},
+						"Value": {
+							"$ref": "#/components/schemas/schema.Embedded"
+						}
+					}
+				}`, string(data))
+			})
 		})
 
 	})
