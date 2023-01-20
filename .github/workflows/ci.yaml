@@ -17,9 +17,11 @@ jobs:
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash)
       - name: Report test-coverage to DeepSource
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
         run: |
           # Install the CLI
           curl https://deepsource.io/cli | sh
 
           # Send the report to DeepSource
-          ./bin/deepsource report --analyzer test-coverage --key go --dsn ${{ secrets.DEEPSOURCE_DSN }} --value-file ./coverage.txt
+          ./bin/deepsource report --analyzer test-coverage --key go --value-file ./coverage.txt
