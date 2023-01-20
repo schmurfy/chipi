@@ -16,14 +16,10 @@ jobs:
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash)
-        
-      - name: DeepSource Test Coverage Action
-        # You may pin to the exact commit or the version.
-        # uses: deepsourcelabs/test-coverage-action@45288ed6a125156cafba365c46b6ba6c63de9198
-        uses: deepsourcelabs/test-coverage-action@v1.0.4
-        with:
-          key: go
-          dsn: ${{ secrets.DEEPSOURCE_DSN }}
-          coverage-file: ./coverage.txt
-          # Should the CI build fail if there is an error while uploading the report to DeepSource? Allowed values are — true, false
-          fail-ci-on-error: false
+      - name: Report test-coverage to DeepSource
+        run: |
+          # Install the CLI
+          curl https://deepsource.io/cli | sh
+
+          # Send the report to DeepSource
+          ./bin/deepsource report --analyzer test-coverage --key go --dsn ${{ secrets.DEEPSOURCE_DSN }} --value-file ./coverage.txt
