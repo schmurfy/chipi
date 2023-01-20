@@ -23,6 +23,7 @@ jobs:
         uses: deepsourcelabs/test-coverage-action@v1.0.4
         with:
           key: go
+          dsn: ${{ secrets.DEEPSOURCE_DSN }}
           coverage-file: ./coverage.txt
           # Should the CI build fail if there is an error while uploading the report to DeepSource? Allowed values are — true, false
           fail-ci-on-error: false
