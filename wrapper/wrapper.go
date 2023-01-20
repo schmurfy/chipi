@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	_tracer  = otel.Tracer("chipi")
+	_tracer  = otel.Tracer("chipiii")
 	_noValue = reflect.Value{}
 )
 
