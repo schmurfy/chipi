@@ -49,6 +49,19 @@ func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, 
 					Schema: responseSchema,
 				},
 			}
+		} else if typ.Kind() == reflect.Slice {
+			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, filterObject)
+			if err != nil {
+				return err
+			}
+			if responseSchema.Value.Format == "byte" {
+				contentType = "application/octet-stream"
+			}
+			resp.Content = openapi3.Content{
+				contentType: &openapi3.MediaType{
+					Schema: responseSchema,
+				},
+			}
 		}
 
 		responses["200"] = &openapi3.ResponseRef{

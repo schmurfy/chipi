@@ -137,6 +137,24 @@ func TestResponse(t *testing.T) {
 
 			mediaType := resp.Value.Content.Get("application/json")
 			require.Nil(g, mediaType)
+
+			mediaType = resp.Value.Content.Get("application/octet-stream")
+			require.NotNil(g, mediaType)
+		})
+
+		g.It("should handle array response", func() {
+			req := struct {
+				response.JsonEncoder
+				Response []Inline
+			}{}
+
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			require.NoError(g, err)
+
+			resp, found := op.Responses["200"]
+			require.True(g, found)
+
+			require.NotNil(g, *resp.Value.Content["application/json"].Schema.Value.Items)
 		})
 
 		g.It("should embed Inline struct", func() {
