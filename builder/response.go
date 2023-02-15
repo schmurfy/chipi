@@ -54,7 +54,7 @@ func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, 
 			if err != nil {
 				return err
 			}
-			if responseSchema.Value.Format == "byte" {
+			if responseSchema.Value.Format == "binary" {
 				contentType = "application/octet-stream"
 			}
 			resp.Content = openapi3.Content{
