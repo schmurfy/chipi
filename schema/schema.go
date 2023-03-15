@@ -23,18 +23,18 @@ func New() (*Schema, error) {
 }
 
 func (s *Schema) GenerateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type) (*openapi3.SchemaRef, error) {
-	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, nil)
+	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, shared.NewChipiCallbacks(nil))
 }
 
-func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, filterObject shared.FilterInterface) (*openapi3.SchemaRef, error) {
-	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, filterObject)
+func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
+	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, callbacksObject)
 }
 
-func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.SchemaRef, error) {
+func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
 	fullName := typeName(t)
 
-	if (filterObject != nil && !reflect.ValueOf(filterObject).IsNil()) && !fieldInfo.Empty() {
-		filter, err := filterObject.FilterField(ctx, fieldInfo)
+	if !fieldInfo.Empty() {
+		filter, err := callbacksObject.FilterField(ctx, fieldInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			}
 
 		} else {
-			items, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, filterObject)
+			items, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, callbacksObject)
 			if err != nil {
 				return nil, err
 			}
@@ -103,7 +103,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		}
 
 	case reflect.Map:
-		additionalProperties, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, filterObject)
+		additionalProperties, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, callbacksObject)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		// if we have an anonymous structure, inline it and stop there
 		if (t.Name() == "") || (inlineLevel > 0) {
 			var err error
-			schema.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, filterObject)
+			schema.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, callbacksObject)
 			return schema, err
 		}
 
@@ -141,7 +141,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			doc.Components.Schemas[fullName] = ref
 
 			// fmt.Printf("%s - BEFORE: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
-			ref.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, filterObject)
+			ref.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, callbacksObject)
 			if err != nil {
 				return nil, err
 			}
@@ -152,6 +152,23 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 
 	default:
 		return nil, fmt.Errorf("unknown type: %v", t.Kind())
+	}
+
+	if isEnum, enum := callbacksObject.EnumResolver(t); isEnum {
+		for _, enumEntry := range enum {
+			schema.Value.OneOf = append(schema.Value.OneOf, &openapi3.SchemaRef{
+				Value: &openapi3.Schema{
+					Title: fmt.Sprint(enumEntry.Title),
+					ExtensionProps: openapi3.ExtensionProps{
+						Extensions: map[string]interface{}{
+							"const": enumEntry.Value,
+						},
+					},
+					Type:   schema.Value.Type,
+					Format: schema.Value.Format,
+				},
+			})
+		}
 	}
 
 	return schema, nil
@@ -174,7 +191,7 @@ func pkgName(t reflect.Type) string {
 	return parts[len(parts)-1]
 }
 
-func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.Schema, error) {
+func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}
@@ -184,15 +201,13 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 
 	fieldInfo = fieldInfo.AppendPath(structName)
 
-	if filterObject != nil && !reflect.ValueOf(filterObject).IsNil() {
-		filter, err := filterObject.FilterField(ctx, fieldInfo)
-		if err != nil {
-			return nil, err
-		}
+	filter, err := callbacksObject.FilterField(ctx, fieldInfo)
+	if err != nil {
+		return nil, err
+	}
 
-		if filter {
-			return nil, nil
-		}
+	if filter {
+		return nil, nil
 	}
 
 	for i := 0; i < t.NumField(); i++ {
@@ -208,7 +223,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			WithModelPath(pkgName + "." + structName + "." + fieldName).
 			AppendPath(fieldName)
 
-		fieldSchema, err := s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, filterObject)
+		fieldSchema, err := s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, callbacksObject)
 		if err != nil {
 			return nil, err
 		}

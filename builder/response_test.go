@@ -10,6 +10,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/schmurfy/chipi/response"
+	"github.com/schmurfy/chipi/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,7 +52,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.Error(g, err)
 			assert.Contains(g, err.Error(), "must implement ResponseEncoder")
 		})
@@ -60,7 +61,7 @@ func TestResponse(t *testing.T) {
 			req := struct {
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
 			responseObj, found := op.Responses["204"]
@@ -76,7 +77,7 @@ func TestResponse(t *testing.T) {
 				} `content-type:"application/pdf"`
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -98,7 +99,7 @@ func TestResponse(t *testing.T) {
 				}
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -127,7 +128,7 @@ func TestResponse(t *testing.T) {
 				Response []byte `description:"the requested file"`
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -148,7 +149,7 @@ func TestResponse(t *testing.T) {
 				Response []Inline
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
 			resp, found := op.Responses["200"]
@@ -163,7 +164,7 @@ func TestResponse(t *testing.T) {
 				Response Parent
 			}{}
 
-			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), nil)
+			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
 			require.NotNil(g, b.swagger.Components.Schemas[reflect.TypeOf(req.Response).String()])

@@ -11,7 +11,7 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, filterObject shared.FilterInterface) error {
+func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, callbacksObject shared.ChipiCallbacks) error {
 	responses := make(openapi3.Responses)
 
 	responseField, found := requestObjectType.FieldByName("Response")
@@ -39,7 +39,7 @@ func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, 
 		}
 
 		if typ.Kind() == reflect.Struct {
-			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, filterObject)
+			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, callbacksObject)
 			if err != nil {
 				return err
 			}
@@ -50,7 +50,7 @@ func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, 
 				},
 			}
 		} else if typ.Kind() == reflect.Slice {
-			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, filterObject)
+			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, callbacksObject)
 			if err != nil {
 				return err
 			}
