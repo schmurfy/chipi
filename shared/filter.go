@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -50,9 +51,63 @@ func (ai AttributeInfo) AppendPath(segment string) AttributeInfo {
 	}
 }
 
-type FilterInterface interface {
+type EnumEntry struct {
+	Title interface{}
+	Value interface{}
+}
+type Enum = []EnumEntry
+
+// This object can implement FilterRoute/FilterField/EnumResolver
+type ChipiCallbackInterface interface {
+}
+
+type FilterRouteInterface interface {
 	FilterRoute(ctx context.Context, method string, pattern string) (bool, error)
+}
+type FilterFieldInterface interface {
 	FilterField(ctx context.Context, fieldInfo AttributeInfo) (bool, error)
+}
+type EnumResolverInterface interface {
+	EnumResolver(t reflect.Type) (bool, Enum)
+}
+
+type ChipiCallbacks struct {
+	FilterRouteInterface
+	FilterFieldInterface
+	EnumResolverInterface
+	i ChipiCallbackInterface
+}
+
+var _ FilterRouteInterface = (*ChipiCallbacks)(nil)
+var _ FilterFieldInterface = (*ChipiCallbacks)(nil)
+var _ EnumResolverInterface = (*ChipiCallbacks)(nil)
+
+func NewChipiCallbacks(i ChipiCallbackInterface) ChipiCallbacks {
+	return ChipiCallbacks{i: i}
+}
+
+func (c *ChipiCallbacks) FilterRoute(ctx context.Context, method string, pattern string) (bool, error) {
+	if filterInterface, hasFilter := c.i.(FilterRouteInterface); c.i != nil && hasFilter {
+		return filterInterface.FilterRoute(ctx, method, pattern)
+	} else {
+		return false, nil
+	}
+}
+
+func (c *ChipiCallbacks) FilterField(ctx context.Context, fieldInfo AttributeInfo) (bool, error) {
+	if filterInterface, hasFilter := c.i.(FilterFieldInterface); c.i != nil && hasFilter {
+		return filterInterface.FilterField(ctx, fieldInfo)
+	} else {
+		return false, nil
+	}
+}
+
+func (c *ChipiCallbacks) EnumResolver(t reflect.Type) (bool, Enum) {
+	if filterInterface, hasFilter := c.i.(EnumResolverInterface); c.i != nil && hasFilter {
+		return filterInterface.EnumResolver(t)
+	} else {
+		return false, nil
+	}
 }
 
 // type RoutePatcherInterface interface {

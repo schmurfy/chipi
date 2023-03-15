@@ -52,9 +52,7 @@ type TestFilter struct {
 	AllowedFields []string
 }
 
-func (f *TestFilter) FilterRoute(ctx context.Context, method string, pattern string) (bool, error) {
-	return false, nil
-}
+var _ shared.FilterFieldInterface = &TestFilter{}
 
 func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.AttributeInfo) (bool, error) {
 	for _, path := range f.AllowedFields {
@@ -63,6 +61,22 @@ func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.Attribute
 		}
 	}
 	return true, nil
+}
+
+type TestEnumResolver struct {
+}
+
+var _ shared.EnumResolverInterface = &TestEnumResolver{}
+
+func (e *TestEnumResolver) EnumResolver(t reflect.Type) (bool, shared.Enum) {
+	if t.Name() == "UserGender" {
+		return true, []shared.EnumEntry{
+			{Title: "NOT_SET", Value: 0},
+			{Title: "MALE", Value: 1},
+			{Title: "FEMALE", Value: 2},
+		}
+	}
+	return false, nil
 }
 
 func TestSchema(t *testing.T) {
@@ -149,10 +163,12 @@ func TestSchema(t *testing.T) {
 		})
 
 		g.Describe("structures", func() {
+			type UserGender int
 			type User struct {
 				Name    string `json:"name,omitempty"`
 				Age     int
 				Ignored bool `json:"-"`
+				Gender  UserGender
 			}
 
 			type Group struct {
@@ -167,7 +183,7 @@ func TestSchema(t *testing.T) {
 				}}
 
 				typ := reflect.TypeOf(&User{})
-				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, filter)
+				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, shared.NewChipiCallbacks(filter))
 				require.NoError(g, err)
 
 				_, err = json.Marshal(schema)
@@ -185,6 +201,44 @@ func TestSchema(t *testing.T) {
 						"Age": {
 							"type": "integer",
 							"format": "int64"
+						}
+					}
+				}`, string(data))
+			})
+
+			g.It("should use oneof for enums direct fields", func() {
+
+				typ := reflect.TypeOf(&User{})
+				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, shared.NewChipiCallbacks(&TestEnumResolver{}))
+				require.NoError(g, err)
+
+				_, err = json.Marshal(schema)
+				require.NoError(g, err)
+
+				userSchema, found := doc.Components.Schemas[typeName(typ.Elem())]
+				require.True(g, found)
+
+				data, err := json.Marshal(userSchema)
+				require.NoError(g, err)
+
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"Age": {
+							"type": "integer",
+							"format": "int64"
+						},
+						"Gender": {
+							"type": "integer",
+							"format": "int64",
+							"oneOf": [
+								{ "type": "integer", "format": "int64", "const": 0, "title": "NOT_SET" },
+								{ "type": "integer", "format": "int64", "const": 1, "title": "MALE" },
+								{ "type": "integer", "format": "int64", "const": 2, "title": "FEMALE" }
+							]
 						}
 					}
 				}`, string(data))
@@ -217,6 +271,10 @@ func TestSchema(t *testing.T) {
 							"type": "string"
 						},
 						"Age": {
+							"type": "integer",
+							"format": "int64"
+						},
+						"Gender": {
 							"type": "integer",
 							"format": "int64"
 						}

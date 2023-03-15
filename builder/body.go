@@ -11,10 +11,10 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateBodyDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, filterObject shared.FilterInterface) error {
+func (b *Builder) generateBodyDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, callbacksObject shared.ChipiCallbacks) error {
 	bodyField, found := requestObjectType.FieldByName("Body")
 	if found {
-		bodySchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, bodyField.Type, filterObject)
+		bodySchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, bodyField.Type, callbacksObject)
 		if err != nil {
 			return err
 		}

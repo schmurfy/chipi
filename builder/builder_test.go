@@ -106,7 +106,7 @@ func TestBuilder(t *testing.T) {
 				})
 
 				g.It("should not filter routes", func() {
-					json, err := b.GenerateJson(ctx, nil)
+					json, err := b.GenerateJson(ctx, shared.NewChipiCallbacks(nil))
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
@@ -118,7 +118,7 @@ func TestBuilder(t *testing.T) {
 						{Method: "POST", Pattern: "other/route"},
 					}}
 
-					json, err := b.GenerateJson(ctx, &filter)
+					json, err := b.GenerateJson(ctx, shared.NewChipiCallbacks(&filter))
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
@@ -131,7 +131,7 @@ func TestBuilder(t *testing.T) {
 						{Method: "POST", Pattern: routePath},
 					}}
 
-					json, err := b.GenerateJson(ctx, &filter)
+					json, err := b.GenerateJson(ctx, shared.NewChipiCallbacks(&filter))
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
