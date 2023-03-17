@@ -72,7 +72,7 @@ func (b *Builder) AddSecurityRequirement(req openapi3.SecurityRequirement) {
 }
 
 func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
-	data, err := b.GenerateJson(r.Context(), nil)
+	data, err := b.GenerateJson(r.Context(), shared.NewChipiCallbacks(nil))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -150,7 +150,7 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	return nil
 }
 
-func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterInterface) ([]byte, error) {
+func (b *Builder) GenerateJson(ctx context.Context, callbacksObject shared.ChipiCallbacks) ([]byte, error) {
 
 	swagger := *b.swagger
 	for _, m := range b.methods {
@@ -162,15 +162,13 @@ func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterIn
 			return nil, err
 		}
 
-		if filterObject != nil && !reflect.ValueOf(filterObject).IsNil() {
-			removeRoute, err := filterObject.FilterRoute(ctx, m.method, routeContext.RoutePattern())
-			if err != nil {
-				return nil, err
-			}
+		removeRoute, err := callbacksObject.FilterRoute(ctx, m.method, routeContext.RoutePattern())
+		if err != nil {
+			return nil, err
+		}
 
-			if removeRoute {
-				continue
-			}
+		if removeRoute {
+			continue
 		}
 
 		op := openapi3.NewOperation()
@@ -200,13 +198,13 @@ func (b *Builder) GenerateJson(ctx context.Context, filterObject shared.FilterIn
 		}
 
 		// body
-		err = b.generateBodyDoc(ctx, &swagger, op, m.reqObject, typ, filterObject)
+		err = b.generateBodyDoc(ctx, &swagger, op, m.reqObject, typ, callbacksObject)
 		if err != nil {
 			return nil, err
 		}
 
 		// response
-		err = b.generateResponseDoc(ctx, &swagger, op, m.reqObject, typ, filterObject)
+		err = b.generateResponseDoc(ctx, &swagger, op, m.reqObject, typ, callbacksObject)
 		if err != nil {
 			return nil, err
 		}
