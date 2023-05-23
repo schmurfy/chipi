@@ -145,7 +145,7 @@ func TestSchema(t *testing.T) {
 		g.Describe("different packages", func() {
 			g.It("should generate correct reference path", func() {
 				typ1 := reflect.TypeOf(monster.QueryResponse{})
-				path := structReference(typ1)
+				path := schemaReference(typ1)
 				assert.Equal(g, "#/components/schemas/monster.QueryResponse", path)
 			})
 
