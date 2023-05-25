@@ -148,27 +148,37 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			// fmt.Printf("%s - AFTER: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 		}
 
-		schema.Ref = structReference(t)
+		schema.Ref = schemaReference(t)
 
 	default:
 		return nil, fmt.Errorf("unknown type: %v", t.Kind())
 	}
 
+	// Handle the case of enums
 	if isEnum, enum := callbacksObject.EnumResolver(t); isEnum {
-		for _, enumEntry := range enum {
-			schema.Value.OneOf = append(schema.Value.OneOf, &openapi3.SchemaRef{
-				Value: &openapi3.Schema{
-					Title: fmt.Sprint(enumEntry.Title),
-					ExtensionProps: openapi3.ExtensionProps{
-						Extensions: map[string]interface{}{
-							"const": enumEntry.Value,
+		_, found := doc.Components.Schemas[fullName]
+		if !found {
+			for _, enumEntry := range enum {
+				schema.Value.OneOf = append(schema.Value.OneOf, &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Title: fmt.Sprint(enumEntry.Title),
+						ExtensionProps: openapi3.ExtensionProps{
+							Extensions: map[string]interface{}{
+								"const": enumEntry.Value,
+							},
 						},
+						Type:   "const",
+						Format: schema.Value.Format,
 					},
-					Type:   schema.Value.Type,
-					Format: schema.Value.Format,
-				},
-			})
+				})
+			}
+			doc.Components.Schemas[fullName] = &openapi3.SchemaRef{
+				Value: schema.Value,
+			}
 		}
+
+		schema.Ref = schemaReference(t)
+		schema.Value = nil
 	}
 
 	return schema, nil
@@ -181,7 +191,7 @@ func typeName(t reflect.Type) string {
 	return t.String()
 }
 
-func structReference(t reflect.Type) string {
+func schemaReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
