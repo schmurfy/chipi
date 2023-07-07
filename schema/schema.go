@@ -224,7 +224,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 		f := t.Field(i)
 		tag := ParseJsonTag(f)
 
-		if (tag.Ignored != nil) && *tag.Ignored {
+		if !f.IsExported() || (tag.Ignored != nil) && *tag.Ignored {
 			continue
 		}
 
