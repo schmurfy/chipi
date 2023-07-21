@@ -30,6 +30,29 @@ func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T,
 	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, callbacksObject)
 }
 
+func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3.T, t CastType, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
+	if !fieldInfo.Empty() {
+		filter, err := callbacksObject.FilterField(ctx, fieldInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		if filter {
+			return nil, nil
+		}
+	}
+
+	schema := &openapi3.SchemaRef{}
+	switch t {
+	case CastTypeDatetime:
+		schema.Value = openapi3.NewDateTimeSchema()
+	default:
+		return nil, fmt.Errorf("unknown cast type: %s", t)
+	}
+
+	return schema, nil
+}
+
 func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
 	fullName := typeName(t)
 
@@ -224,7 +247,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 		f := t.Field(i)
 		tag := ParseJsonTag(f)
 
-		if (tag.Ignored != nil) && *tag.Ignored {
+		if !f.IsExported() || (tag.Ignored != nil) && *tag.Ignored {
 			continue
 		}
 
@@ -233,7 +256,13 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			WithModelPath(pkgName + "." + structName + "." + fieldName).
 			AppendPath(fieldName)
 
-		fieldSchema, err := s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, callbacksObject)
+		var fieldSchema *openapi3.SchemaRef
+		if tag.TypeCast != nil {
+			fieldSchema, err = s.generateSchemaWithCastedType(ctx, doc, *tag.TypeCast, inlineLevel-1, fi, callbacksObject)
+		} else {
+			fieldSchema, err = s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, callbacksObject)
+		}
+
 		if err != nil {
 			return nil, err
 		}

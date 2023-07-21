@@ -164,11 +164,15 @@ func TestSchema(t *testing.T) {
 
 		g.Describe("structures", func() {
 			type UserSex int
+			type WrappedTime struct {
+				time.Time
+			}
 			type User struct {
 				Name    string `json:"name,omitempty"`
 				Age     int
 				Ignored bool `json:"-"`
 				Sex     UserSex
+				Time    WrappedTime `chipi:"as:datetime"`
 			}
 
 			type Group struct {
@@ -206,7 +210,7 @@ func TestSchema(t *testing.T) {
 				}`, string(data))
 			})
 
-			g.It("should use oneof for enums direct fields", func() {
+			g.It("should use oneof as refs for enums and cast fields with as:", func() {
 
 				typ := reflect.TypeOf(&User{})
 				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, shared.NewChipiCallbacks(&TestEnumResolver{}))
@@ -231,17 +235,22 @@ func TestSchema(t *testing.T) {
 							"type": "integer",
 							"format": "int64"
 						},
-						"Sex": {
-							"type": "integer",
-							"format": "int64",
-							"oneOf": [
-								{ "type": "integer", "format": "int64", "const": 0, "title": "NOT_SET" },
-								{ "type": "integer", "format": "int64", "const": 1, "title": "MALE" },
-								{ "type": "integer", "format": "int64", "const": 2, "title": "FEMALE" }
-							]
-						}
+						"Time": {"format":"date-time", "type":"string"},
+						"Sex": {"$ref":"#/components/schemas/schema.UserSex"}
 					}
 				}`, string(data))
+
+				ref, err := json.Marshal(doc.Components.Schemas["schema.UserSex"])
+				require.NoError(g, err)
+				assert.JSONEq(g, `{
+					"type": "integer",
+					"format": "int64",
+					"oneOf": [
+						{ "type": "const", "format": "int64", "const": 0, "title": "NOT_SET" },
+						{ "type": "const", "format": "int64", "const": 1, "title": "MALE" },
+						{ "type": "const", "format": "int64", "const": 2, "title": "FEMALE" }
+					]
+				}`, string(ref))
 			})
 
 			g.It("should generate referenced type for user", func() {
@@ -277,7 +286,8 @@ func TestSchema(t *testing.T) {
 						"Sex": {
 							"type": "integer",
 							"format": "int64"
-						}
+						},
+						"Time": {"format":"date-time", "type":"string"}
 					}
 				}`, string(data))
 			})

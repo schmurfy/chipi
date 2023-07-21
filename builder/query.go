@@ -23,6 +23,9 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 
 	for i := 0; i < queryStructType.NumField(); i++ {
 		field := queryStructType.Field(i)
+		if !field.IsExported() {
+			continue
+		}
 
 		fieldSchema, err := b.schema.GenerateSchemaFor(ctx, swagger, field.Type)
 		if err != nil {
