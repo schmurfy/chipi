@@ -167,12 +167,16 @@ func TestSchema(t *testing.T) {
 			type WrappedTime struct {
 				time.Time
 			}
+			type WrappedDuration struct {
+				Duration int64
+			}
 			type User struct {
-				Name    string `json:"name,omitempty"`
-				Age     int
-				Ignored bool `json:"-"`
-				Sex     UserSex
-				Time    WrappedTime `chipi:"as:datetime"`
+				Name     string `json:"name,omitempty"`
+				Age      int
+				Ignored  bool `json:"-"`
+				Sex      UserSex
+				Time     WrappedTime     `chipi:"as:datetime"`
+				Duration WrappedDuration `chipi:"as:duration"`
 			}
 
 			type Group struct {
@@ -236,6 +240,7 @@ func TestSchema(t *testing.T) {
 							"format": "int64"
 						},
 						"Time": {"format":"date-time", "type":"string"},
+						"Duration": {"format":"int64", "type":"integer"},
 						"Sex": {"$ref":"#/components/schemas/schema.UserSex"}
 					}
 				}`, string(data))
@@ -287,7 +292,8 @@ func TestSchema(t *testing.T) {
 							"type": "integer",
 							"format": "int64"
 						},
-						"Time": {"format":"date-time", "type":"string"}
+						"Time": {"format":"date-time", "type":"string"},
+						"Duration": {"format":"int64", "type":"integer"}
 					}
 				}`, string(data))
 			})
