@@ -21,9 +21,8 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 		return errors.New("expected struct for Query")
 	}
 
-	for i := 0; i < queryStructType.NumField(); i++ {
-		field := queryStructType.Field(i)
-		if !field.IsExported() {
+	for _, field := range reflect.VisibleFields(queryStructType) {
+		if !field.IsExported() || field.Anonymous {
 			continue
 		}
 
