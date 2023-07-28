@@ -157,11 +157,7 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 	// query
 	queryValue := ret.Elem().FieldByName("Query")
 	if queryValue.IsValid() {
-		for i := 0; i < queryValue.NumField(); i++ {
-
-			queryFieldName := queryValue.Type().Field(i).Name
-			structField, _ := queryValue.Type().FieldByName(queryFieldName)
-
+		for _, structField := range reflect.VisibleFields(queryValue.Type()) {
 			// Tag "json" overwrite the key
 			parsedQueryFieldName := schema.ParseJsonTag(structField).Name
 			if parsedQueryFieldName == structField.Name {
@@ -172,7 +168,7 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			if value, ok := r.URL.Query()[parsedQueryFieldName]; ok {
 				err = setFValue(ctx,
 					path,
-					queryValue.Field(i),
+					queryValue.FieldByIndex(structField.Index),
 					value[0],
 				)
 				if err != nil {
