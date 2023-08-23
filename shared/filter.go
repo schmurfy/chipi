@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 // unused for now,
@@ -70,17 +72,22 @@ type FilterFieldInterface interface {
 type EnumResolverInterface interface {
 	EnumResolver(t reflect.Type) (bool, Enum)
 }
+type SchemaResolverInterface interface {
+	SchemaResolver(fieldInfo AttributeInfo) *openapi3.Schema
+}
 
 type ChipiCallbacks struct {
 	FilterRouteInterface
 	FilterFieldInterface
 	EnumResolverInterface
+	SchemaResolverInterface
 	i ChipiCallbackInterface
 }
 
 var _ FilterRouteInterface = (*ChipiCallbacks)(nil)
 var _ FilterFieldInterface = (*ChipiCallbacks)(nil)
 var _ EnumResolverInterface = (*ChipiCallbacks)(nil)
+var _ SchemaResolverInterface = (*ChipiCallbacks)(nil)
 
 func NewChipiCallbacks(i ChipiCallbackInterface) ChipiCallbacks {
 	return ChipiCallbacks{i: i}
@@ -103,17 +110,17 @@ func (c *ChipiCallbacks) FilterField(ctx context.Context, fieldInfo AttributeInf
 }
 
 func (c *ChipiCallbacks) EnumResolver(t reflect.Type) (bool, Enum) {
-	if filterInterface, hasFilter := c.i.(EnumResolverInterface); c.i != nil && hasFilter {
-		return filterInterface.EnumResolver(t)
+	if enumInterface, hasEnum := c.i.(EnumResolverInterface); c.i != nil && hasEnum {
+		return enumInterface.EnumResolver(t)
 	} else {
 		return false, nil
 	}
 }
 
-// type RoutePatcherInterface interface {
-// 	PatchRoute()
-// }
-
-// type FieldFilterInterface interface {
-// 	FilterRoute()
-// }
+func (c *ChipiCallbacks) SchemaResolver(fieldInfo AttributeInfo) *openapi3.Schema {
+	if schemaInterface, hasSchema := c.i.(SchemaResolverInterface); c.i != nil && hasSchema {
+		return schemaInterface.SchemaResolver(fieldInfo)
+	} else {
+		return openapi3.NewObjectSchema()
+	}
+}
