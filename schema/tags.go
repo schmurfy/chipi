@@ -12,10 +12,11 @@ type CastType string
 const (
 	CastTypeDatetime CastType = "datetime"
 	CastTypeDuration CastType = "duration"
+	CastTypeSchema   CastType = "schema"
 )
 
 var (
-	SupportedTypeCasts = []CastType{CastTypeDatetime, CastTypeDuration}
+	SupportedTypeCasts = []CastType{CastTypeDatetime, CastTypeDuration, CastTypeSchema}
 )
 
 type jsonTag struct {

@@ -48,6 +48,8 @@ func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3
 		schema.Value = openapi3.NewDateTimeSchema()
 	case CastTypeDuration:
 		schema.Value = openapi3.NewInt64Schema()
+	case CastTypeSchema:
+		schema.Value = callbacksObject.SchemaResolver(fieldInfo)
 	default:
 		return nil, fmt.Errorf("unknown cast type: %s", t)
 	}
