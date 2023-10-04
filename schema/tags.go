@@ -3,20 +3,6 @@ package schema
 import (
 	"reflect"
 	"strings"
-
-	"github.com/schmurfy/chipi/shared"
-)
-
-type CastType string
-
-const (
-	CastTypeDatetime CastType = "datetime"
-	CastTypeDuration CastType = "duration"
-	CastTypeSchema   CastType = "schema"
-)
-
-var (
-	SupportedTypeCasts = []CastType{CastTypeDatetime, CastTypeDuration, CastTypeSchema}
 )
 
 type jsonTag struct {
@@ -30,7 +16,7 @@ type jsonTag struct {
 	Ignored    *bool
 	Deprecated *bool
 	Required   *bool
-	TypeCast   *CastType
+	CastName   *string
 
 	// self contained
 	Explode     *bool
@@ -76,10 +62,8 @@ func ParseJsonTag(f reflect.StructField) *jsonTag {
 				ret.Required = boolPtr(true)
 			default:
 				if strings.HasPrefix(value, "as:") {
-					castType := CastType(strings.TrimPrefix(value, "as:"))
-					if shared.Contains(SupportedTypeCasts, castType) {
-						ret.TypeCast = &castType
-					}
+					castName := strings.TrimPrefix(value, "as:")
+					ret.CastName = &castName
 				}
 			}
 		}

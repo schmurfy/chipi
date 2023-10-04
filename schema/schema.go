@@ -32,7 +32,7 @@ func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T,
 	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, callbacksObject)
 }
 
-func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3.T, t CastType, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
+func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3.T, castName string, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
 	if !fieldInfo.Empty() {
 		filter, err := callbacksObject.FilterField(ctx, fieldInfo)
 		if err != nil {
@@ -44,19 +44,25 @@ func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3
 		}
 	}
 
-	schema := &openapi3.SchemaRef{}
-	switch t {
-	case CastTypeDatetime:
-		schema.Value = openapi3.NewDateTimeSchema()
-	case CastTypeDuration:
-		schema.Value = openapi3.NewInt64Schema()
-	case CastTypeSchema:
-		schema.Value = callbacksObject.SchemaResolver(fieldInfo)
-	default:
-		return nil, fmt.Errorf("unknown cast type: %s", t)
+	if doc.Components.Schemas == nil {
+		doc.Components.Schemas = make(openapi3.Schemas)
 	}
 
-	return schema, nil
+	customName := fmt.Sprintf("custom_%s", castName)
+	if _, found := doc.Components.Schemas[customName]; !found {
+		var createRef bool
+		schema := &openapi3.SchemaRef{}
+		schema.Value, createRef = callbacksObject.SchemaResolver(fieldInfo, castName)
+		if createRef {
+			doc.Components.Schemas[customName] = schema
+		} else {
+			return schema, nil
+		}
+	}
+
+	return &openapi3.SchemaRef{
+		Ref: fmt.Sprintf("#/components/schemas/%s", customName),
+	}, nil
 }
 
 func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
@@ -278,8 +284,8 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			AppendPath(fieldName)
 
 		var fieldSchema *openapi3.SchemaRef
-		if tag.TypeCast != nil {
-			fieldSchema, err = s.generateSchemaWithCastedType(ctx, doc, *tag.TypeCast, inlineLevel-1, fi, callbacksObject)
+		if tag.CastName != nil {
+			fieldSchema, err = s.generateSchemaWithCastedType(ctx, doc, *tag.CastName, inlineLevel-1, fi, callbacksObject)
 		} else {
 			fieldSchema, err = s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, callbacksObject)
 		}
