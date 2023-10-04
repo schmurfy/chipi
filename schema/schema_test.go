@@ -61,6 +61,7 @@ type TestFilter struct {
 }
 
 var _ shared.FilterFieldInterface = &TestFilter{}
+var _ shared.SchemaResolverInterface = &TestFilter{}
 
 func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.AttributeInfo) (bool, error) {
 	for _, path := range f.AllowedFields {
@@ -71,10 +72,22 @@ func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.Attribute
 	return true, nil
 }
 
+func (f *TestFilter) SchemaResolver(fieldInfo shared.AttributeInfo, castName string) (*openapi3.Schema, bool) {
+	switch castName {
+	case "datetime":
+		return openapi3.NewDateTimeSchema(), false
+	case "duration":
+		return openapi3.NewInt64Schema(), false
+	default:
+		return nil, false
+	}
+}
+
 type TestEnumResolver struct {
 }
 
 var _ shared.EnumResolverInterface = &TestEnumResolver{}
+var _ shared.SchemaResolverInterface = &TestEnumResolver{}
 
 func (e *TestEnumResolver) EnumResolver(t reflect.Type) (bool, shared.Enum) {
 	if t.Name() == "UserSex" {
@@ -85,6 +98,17 @@ func (e *TestEnumResolver) EnumResolver(t reflect.Type) (bool, shared.Enum) {
 		}
 	}
 	return false, nil
+}
+
+func (e *TestEnumResolver) SchemaResolver(fieldInfo shared.AttributeInfo, castName string) (*openapi3.Schema, bool) {
+	switch castName {
+	case "datetime":
+		return openapi3.NewDateTimeSchema(), false
+	case "duration":
+		return openapi3.NewInt64Schema(), false
+	default:
+		return nil, false
+	}
 }
 
 func TestSchema(t *testing.T) {
@@ -268,7 +292,7 @@ func TestSchema(t *testing.T) {
 
 			g.It("should generate referenced type for user", func() {
 				typ := reflect.TypeOf(&User{})
-				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
+				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, shared.NewChipiCallbacks(&TestEnumResolver{}))
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -296,10 +320,7 @@ func TestSchema(t *testing.T) {
 							"type": "integer",
 							"format": "int64"
 						},
-						"Sex": {
-							"type": "integer",
-							"format": "int64"
-						},
+						"Sex": {"$ref":"#/components/schemas/schema.UserSex"},
 						"Time": {"format":"date-time", "type":"string"},
 						"Duration": {"format":"int64", "type":"integer"}
 					}
