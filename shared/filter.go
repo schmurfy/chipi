@@ -59,7 +59,7 @@ type EnumEntry struct {
 }
 type Enum = []EnumEntry
 
-// This object can implement FilterRoute/FilterField/EnumResolver
+// This object can implement FilterRoute/FilterField/EnumResolver/SchemaResolver
 type ChipiCallbackInterface interface {
 }
 
@@ -73,7 +73,11 @@ type EnumResolverInterface interface {
 	EnumResolver(t reflect.Type) (bool, Enum)
 }
 type SchemaResolverInterface interface {
-	SchemaResolver(fieldInfo AttributeInfo) *openapi3.Schema
+	// CastName is the string after the `as:` in the field tag
+	// e.g. `chipi:"as:uuid"` => CastName = "uuid"
+	// The openapi3.Schema is the schema that will be used to define the CastName field
+	// The boolean decide if we create a $ref in the openapi file
+	SchemaResolver(fieldInfo AttributeInfo, castName string) (*openapi3.Schema, bool)
 }
 
 type ChipiCallbacks struct {
@@ -117,10 +121,10 @@ func (c *ChipiCallbacks) EnumResolver(t reflect.Type) (bool, Enum) {
 	}
 }
 
-func (c *ChipiCallbacks) SchemaResolver(fieldInfo AttributeInfo) *openapi3.Schema {
+func (c *ChipiCallbacks) SchemaResolver(fieldInfo AttributeInfo, castName string) (*openapi3.Schema, bool) {
 	if schemaInterface, hasSchema := c.i.(SchemaResolverInterface); c.i != nil && hasSchema {
-		return schemaInterface.SchemaResolver(fieldInfo)
+		return schemaInterface.SchemaResolver(fieldInfo, castName)
 	} else {
-		return openapi3.NewObjectSchema()
+		return openapi3.NewObjectSchema(), false
 	}
 }
