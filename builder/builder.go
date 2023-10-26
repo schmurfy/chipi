@@ -213,6 +213,14 @@ func (b *Builder) GenerateJson(ctx context.Context, callbacksObject shared.Chipi
 
 	}
 
+	schemas, paths := callbacksObject.ExtraComponentsAndPaths()
+	for key, value := range schemas {
+		swagger.Components.Schemas[key] = value
+	}
+	for key, value := range paths {
+		swagger.Paths[key] = value
+	}
+
 	json, err := swagger.MarshalJSON()
 	if err != nil {
 		return nil, err

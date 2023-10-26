@@ -80,6 +80,10 @@ type SchemaResolverInterface interface {
 	SchemaResolver(fieldInfo AttributeInfo, castName string) (*openapi3.Schema, bool)
 }
 
+type ExtraComponentsAndPathsInterface interface {
+	ExtraComponentsAndPaths() (openapi3.Schemas, openapi3.Paths)
+}
+
 type ChipiCallbacks struct {
 	FilterRouteInterface
 	FilterFieldInterface
@@ -126,5 +130,13 @@ func (c *ChipiCallbacks) SchemaResolver(fieldInfo AttributeInfo, castName string
 		return schemaInterface.SchemaResolver(fieldInfo, castName)
 	} else {
 		return openapi3.NewObjectSchema(), false
+	}
+}
+
+func (c *ChipiCallbacks) ExtraComponentsAndPaths() (openapi3.Schemas, openapi3.Paths) {
+	if schemaInterface, hasExtraComponents := c.i.(ExtraComponentsAndPathsInterface); c.i != nil && hasExtraComponents {
+		return schemaInterface.ExtraComponentsAndPaths()
+	} else {
+		return nil, nil
 	}
 }
