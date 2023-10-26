@@ -184,6 +184,8 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		}
 
 		schema.Ref = schemaReference(t)
+	case reflect.Interface:
+		schema.Value = openapi3.NewSchema()
 
 	default:
 		return nil, fmt.Errorf("unknown type: %v", t.Kind())
