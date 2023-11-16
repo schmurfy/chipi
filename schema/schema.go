@@ -144,8 +144,10 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		}
 
 		schema.Value = &openapi3.Schema{
-			Type:                 "object",
-			AdditionalProperties: additionalProperties,
+			Type: "object",
+			AdditionalProperties: openapi3.AdditionalProperties{
+				Schema: additionalProperties,
+			},
 		}
 
 	// struct schemas should be stored as components
@@ -155,6 +157,9 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			return schema, nil
 		}
 
+		if doc.Components == nil {
+			doc.Components = &openapi3.Components{}
+		}
 		if doc.Components.Schemas == nil {
 			doc.Components.Schemas = make(openapi3.Schemas)
 		}
@@ -199,10 +204,8 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 				schema.Value.OneOf = append(schema.Value.OneOf, &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
 						Title: fmt.Sprint(enumEntry.Title),
-						ExtensionProps: openapi3.ExtensionProps{
-							Extensions: map[string]interface{}{
-								"const": enumEntry.Value,
-							},
+						Extensions: map[string]any{
+							"const": enumEntry.Value,
 						},
 						Type:   "const",
 						Format: schema.Value.Format,
@@ -332,6 +335,9 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			// fmt.Printf("wtf: %s.%s (%s)\n", t.Name(), f.Name, fieldSchema.Ref)
 			// fieldSchema.Value = openapi3.NewSchema()
 		} else {
+			if fieldSchema.Value == nil {
+				fieldSchema.Value = openapi3.NewSchema()
+			}
 			fieldSchema.Value.ReadOnly = (tag.ReadOnly != nil) && *tag.ReadOnly
 			fieldSchema.Value.Nullable = (tag.Nullable != nil) && *tag.Nullable
 			fieldSchema.Value.Deprecated = (tag.Deprecated != nil) && *tag.Deprecated

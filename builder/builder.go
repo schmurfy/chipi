@@ -58,6 +58,9 @@ func (b *Builder) AddServer(server *openapi3.Server) {
 }
 
 func (b *Builder) AddSecurityScheme(name string, s *openapi3.SecurityScheme) {
+	if b.swagger.Components == nil {
+		b.swagger.Components = &openapi3.Components{}
+	}
 	if b.swagger.Components.SecuritySchemes == nil {
 		b.swagger.Components.SecuritySchemes = make(openapi3.SecuritySchemes)
 	}
