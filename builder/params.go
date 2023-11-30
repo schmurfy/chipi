@@ -15,7 +15,7 @@ import (
 func (b *Builder) generateParametersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, method string, routeContext *chi.Context) error {
 	pathField, found := requestObjectType.FieldByName("Path")
 	if !found {
-		return errors.New("wrong struct, Path field expected")
+		return errors.Errorf("wrong struct, Path field expected on %s ", requestObjectType.Name())
 	}
 
 	for _, key := range routeContext.URLParams.Keys {
@@ -26,7 +26,7 @@ func (b *Builder) generateParametersDoc(ctx context.Context, swagger *openapi3.T
 		// pathStruct must contain all defined keys
 		paramField, found := pathField.Type.FieldByName(key)
 		if !found {
-			return errors.Errorf("wrong path struct, field %s expected", key)
+			return errors.Errorf("wrong path struct, field %s expected on %s", key, requestObjectType.Name())
 		}
 
 		schema, err := b.schema.GenerateSchemaFor(ctx, swagger, paramField.Type)

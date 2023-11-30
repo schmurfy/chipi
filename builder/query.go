@@ -18,7 +18,7 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 
 	queryStructType := pathField.Type
 	if queryStructType.Kind() != reflect.Struct {
-		return errors.New("expected struct for Query")
+		return errors.Errorf("expected struct for Query : %s ", requestObjectType.Name())
 	}
 
 	for _, field := range reflect.VisibleFields(queryStructType) {
