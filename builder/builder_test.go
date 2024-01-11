@@ -111,7 +111,7 @@ func TestBuilder(t *testing.T) {
 
 					swagger := convertToSwagger(g, json)
 
-					require.NotNil(g, swagger.Paths[routePath])
+					require.NotNil(g, swagger.Paths.Map()[routePath])
 				})
 				g.It("should filter routes", func() {
 					filter := TestFilter{AllowedRoutes: []TestRoute{
@@ -123,7 +123,7 @@ func TestBuilder(t *testing.T) {
 
 					swagger := convertToSwagger(g, json)
 
-					require.Nil(g, swagger.Paths[routePath])
+					require.Nil(g, swagger.Paths.Map()[routePath])
 				})
 
 				g.It("should authorize routes", func() {
@@ -136,7 +136,7 @@ func TestBuilder(t *testing.T) {
 
 					swagger := convertToSwagger(g, json)
 
-					require.NotNil(g, swagger.Paths[routePath])
+					require.NotNil(g, swagger.Paths.Map()[routePath])
 				})
 
 			})
