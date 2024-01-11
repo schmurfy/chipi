@@ -220,8 +220,8 @@ func (b *Builder) GenerateJson(ctx context.Context, callbacksObject shared.Chipi
 	for key, value := range schemas {
 		swagger.Components.Schemas[key] = value
 	}
-	for key, value := range paths {
-		swagger.Paths[key] = value
+	for key, value := range paths.Map() {
+		swagger.Paths.Set(key, value)
 	}
 
 	json, err := swagger.MarshalJSON()

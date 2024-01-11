@@ -64,7 +64,7 @@ func TestResponse(t *testing.T) {
 			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
-			responseObj, found := op.Responses["204"]
+			responseObj, found := op.Responses.Map()["204"]
 			require.True(g, found)
 			require.NotNil(g, responseObj)
 		})
@@ -80,7 +80,7 @@ func TestResponse(t *testing.T) {
 			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
-			resp, found := op.Responses["200"]
+			resp, found := op.Responses.Map()["200"]
 			require.True(g, found)
 
 			mediaType := resp.Value.Content.Get("application/json")
@@ -102,7 +102,7 @@ func TestResponse(t *testing.T) {
 			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
-			resp, found := op.Responses["200"]
+			resp, found := op.Responses.Map()["200"]
 			require.True(g, found)
 
 			mediaType := resp.Value.Content.Get("application/json")
@@ -131,7 +131,7 @@ func TestResponse(t *testing.T) {
 			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
-			resp, found := op.Responses["200"]
+			resp, found := op.Responses.Map()["200"]
 			require.True(g, found)
 
 			assert.Equal(g, "the requested file", *resp.Value.Description)
@@ -152,7 +152,7 @@ func TestResponse(t *testing.T) {
 			err := b.generateResponseDoc(ctx, b.swagger, op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 
-			resp, found := op.Responses["200"]
+			resp, found := op.Responses.Map()["200"]
 			require.True(g, found)
 
 			require.NotNil(g, *resp.Value.Content["application/json"].Schema.Value.Items)

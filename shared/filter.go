@@ -137,6 +137,6 @@ func (c *ChipiCallbacks) ExtraComponentsAndPaths() (openapi3.Schemas, openapi3.P
 	if schemaInterface, hasExtraComponents := c.i.(ExtraComponentsAndPathsInterface); c.i != nil && hasExtraComponents {
 		return schemaInterface.ExtraComponentsAndPaths()
 	} else {
-		return nil, nil
+		return nil, openapi3.Paths{}
 	}
 }
