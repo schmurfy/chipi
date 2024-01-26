@@ -26,7 +26,7 @@ func (b *Builder) generateParametersDoc(ctx context.Context, swagger *openapi3.T
 		// pathStruct must contain all defined keys
 		paramField, found := pathField.Type.FieldByName(key)
 		if !found {
-			return errors.Errorf("wrong path struct, field %s expected on %s", key, requestObjectType.Name())
+			return errors.Errorf("wrong path struct, field %s expected on %+v %s", key, pathField, requestObjectType.Name())
 		}
 
 		schema, err := b.schema.GenerateSchemaFor(ctx, swagger, paramField.Type)
