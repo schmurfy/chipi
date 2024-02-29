@@ -34,7 +34,13 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 		setValuePtr := reflect.New(fieldType)
 		setValuePtr.Elem().Set(setValue)
 		return setValuePtr, nil
-
+	case reflect.Map:
+		outMapPtr := reflect.New(fieldType)
+		err := json.Unmarshal([]byte(value), outMapPtr.Interface())
+		if err != nil {
+			return _noValue, err
+		}
+		return outMapPtr.Elem(), nil
 	case reflect.Slice:
 		param := strings.Split(
 			strings.Trim(value, `[]`),
