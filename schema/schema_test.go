@@ -90,7 +90,7 @@ var _ shared.EnumResolverInterface = &TestEnumResolver{}
 var _ shared.SchemaResolverInterface = &TestEnumResolver{}
 
 func (e *TestEnumResolver) EnumResolver(t reflect.Type) (bool, shared.Enum) {
-	if t.Name() == "UserSex" {
+	if t.Name() == "UserGender" {
 		return true, []shared.EnumEntry{
 			{Title: "NOT_SET", Value: 0},
 			{Title: "MALE", Value: 1},
@@ -195,7 +195,7 @@ func TestSchema(t *testing.T) {
 		})
 
 		g.Describe("structures", func() {
-			type UserSex int
+			type UserGender int
 			type WrappedTime struct {
 				time.Time
 			}
@@ -206,7 +206,7 @@ func TestSchema(t *testing.T) {
 				Name     string `json:"name,omitempty"`
 				Age      int
 				Ignored  bool `json:"-"`
-				Sex      UserSex
+				Sex      UserGender
 				Time     WrappedTime     `chipi:"as:datetime"`
 				Duration WrappedDuration `chipi:"as:duration"`
 			}
@@ -273,11 +273,11 @@ func TestSchema(t *testing.T) {
 						},
 						"Time": {"format":"date-time", "type":"string"},
 						"Duration": {"format":"int64", "type":"integer"},
-						"Sex": {"$ref":"#/components/schemas/schema.UserSex"}
+						"Sex": {"$ref":"#/components/schemas/schema.UserGender"}
 					}
 				}`, string(data))
 
-				ref, err := json.Marshal(doc.Components.Schemas["schema.UserSex"])
+				ref, err := json.Marshal(doc.Components.Schemas["schema.UserGender"])
 				require.NoError(g, err)
 				assert.JSONEq(g, `{
 					"type": "integer",
@@ -320,7 +320,7 @@ func TestSchema(t *testing.T) {
 							"type": "integer",
 							"format": "int64"
 						},
-						"Sex": {"$ref":"#/components/schemas/schema.UserSex"},
+						"Sex": {"$ref":"#/components/schemas/schema.UserGender"},
 						"Time": {"format":"date-time", "type":"string"},
 						"Duration": {"format":"int64", "type":"integer"}
 					}
