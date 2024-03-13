@@ -11,8 +11,8 @@ import (
 	"github.com/schmurfy/chipi/wrapper"
 )
 
-func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, filterObject shared.FilterInterface) error {
-	responses := make(openapi3.Responses)
+func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, callbacksObject shared.ChipiCallbacks) error {
+	responses := openapi3.Responses{}
 
 	responseField, found := requestObjectType.FieldByName("Response")
 	if found {
@@ -39,7 +39,7 @@ func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, 
 		}
 
 		if typ.Kind() == reflect.Struct {
-			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, filterObject)
+			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, callbacksObject)
 			if err != nil {
 				return err
 			}
@@ -50,7 +50,7 @@ func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, 
 				},
 			}
 		} else if typ.Kind() == reflect.Slice {
-			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, filterObject)
+			responseSchema, err := b.schema.GenerateFilteredSchemaFor(ctx, swagger, typ, callbacksObject)
 			if err != nil {
 				return err
 			}
@@ -64,20 +64,20 @@ func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, 
 			}
 		}
 
-		responses["200"] = &openapi3.ResponseRef{
+		responses.Set("200", &openapi3.ResponseRef{
 			Value: resp,
-		}
+		})
 	} else {
 		// if no response provided generate a default 204 code response
 		noData := "no data"
-		responses["204"] = &openapi3.ResponseRef{
+		responses.Set("204", &openapi3.ResponseRef{
 			Value: &openapi3.Response{
 				Description: &noData,
 			},
-		}
+		})
 	}
 
-	op.Responses = responses
+	op.Responses = &responses
 
 	return nil
 }

@@ -60,9 +60,8 @@ type TestFilter struct {
 	AllowedFields []string
 }
 
-func (f *TestFilter) FilterRoute(ctx context.Context, method string, pattern string) (bool, error) {
-	return false, nil
-}
+var _ shared.FilterFieldInterface = &TestFilter{}
+var _ shared.SchemaResolverInterface = &TestFilter{}
 
 func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.AttributeInfo) (bool, error) {
 	for _, path := range f.AllowedFields {
@@ -71,6 +70,45 @@ func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.Attribute
 		}
 	}
 	return true, nil
+}
+
+func (f *TestFilter) SchemaResolver(fieldInfo shared.AttributeInfo, castName string) (*openapi3.Schema, bool) {
+	switch castName {
+	case "datetime":
+		return openapi3.NewDateTimeSchema(), false
+	case "duration":
+		return openapi3.NewInt64Schema(), false
+	default:
+		return nil, false
+	}
+}
+
+type TestEnumResolver struct {
+}
+
+var _ shared.EnumResolverInterface = &TestEnumResolver{}
+var _ shared.SchemaResolverInterface = &TestEnumResolver{}
+
+func (e *TestEnumResolver) EnumResolver(t reflect.Type) (bool, shared.Enum) {
+	if t.Name() == "UserSex" {
+		return true, []shared.EnumEntry{
+			{Title: "NOT_SET", Value: 0},
+			{Title: "MALE", Value: 1},
+			{Title: "FEMALE", Value: 2},
+		}
+	}
+	return false, nil
+}
+
+func (e *TestEnumResolver) SchemaResolver(fieldInfo shared.AttributeInfo, castName string) (*openapi3.Schema, bool) {
+	switch castName {
+	case "datetime":
+		return openapi3.NewDateTimeSchema(), false
+	case "duration":
+		return openapi3.NewInt64Schema(), false
+	default:
+		return nil, false
+	}
 }
 
 func TestSchema(t *testing.T) {
@@ -139,7 +177,7 @@ func TestSchema(t *testing.T) {
 		g.Describe("different packages", func() {
 			g.It("should generate correct reference path", func() {
 				typ1 := reflect.TypeOf(monster.QueryResponse{})
-				path := structReference(typ1)
+				path := schemaReference(typ1)
 				assert.Equal(g, "#/components/schemas/monster.QueryResponse", path)
 			})
 
@@ -157,10 +195,20 @@ func TestSchema(t *testing.T) {
 		})
 
 		g.Describe("structures", func() {
+			type UserSex int
+			type WrappedTime struct {
+				time.Time
+			}
+			type WrappedDuration struct {
+				Duration int64
+			}
 			type User struct {
-				Name    string `json:"name,omitempty"`
-				Age     int
-				Ignored bool `json:"-"`
+				Name     string `json:"name,omitempty"`
+				Age      int
+				Ignored  bool `json:"-"`
+				Sex      UserSex
+				Time     WrappedTime     `chipi:"as:datetime"`
+				Duration WrappedDuration `chipi:"as:duration"`
 			}
 
 			type Group struct {
@@ -175,7 +223,7 @@ func TestSchema(t *testing.T) {
 				}}
 
 				typ := reflect.TypeOf(&User{})
-				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, filter)
+				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, shared.NewChipiCallbacks(filter))
 				require.NoError(g, err)
 
 				_, err = json.Marshal(schema)
@@ -198,9 +246,53 @@ func TestSchema(t *testing.T) {
 				}`, string(data))
 			})
 
+			g.It("should use oneof as refs for enums and cast fields with as:", func() {
+
+				typ := reflect.TypeOf(&User{})
+				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, shared.NewChipiCallbacks(&TestEnumResolver{}))
+				require.NoError(g, err)
+
+				_, err = json.Marshal(schema)
+				require.NoError(g, err)
+
+				userSchema, found := doc.Components.Schemas[typeName(typ.Elem())]
+				require.True(g, found)
+
+				data, err := json.Marshal(userSchema)
+				require.NoError(g, err)
+
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"Age": {
+							"type": "integer",
+							"format": "int64"
+						},
+						"Time": {"format":"date-time", "type":"string"},
+						"Duration": {"format":"int64", "type":"integer"},
+						"Sex": {"$ref":"#/components/schemas/schema.UserSex"}
+					}
+				}`, string(data))
+
+				ref, err := json.Marshal(doc.Components.Schemas["schema.UserSex"])
+				require.NoError(g, err)
+				assert.JSONEq(g, `{
+					"type": "integer",
+					"format": "int64",
+					"oneOf": [
+						{ "type": "const", "format": "int64", "const": 0, "title": "NOT_SET" },
+						{ "type": "const", "format": "int64", "const": 1, "title": "MALE" },
+						{ "type": "const", "format": "int64", "const": 2, "title": "FEMALE" }
+					]
+				}`, string(ref))
+			})
+
 			g.It("should generate referenced type for user", func() {
 				typ := reflect.TypeOf(&User{})
-				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
+				schema, err := s.GenerateFilteredSchemaFor(ctx, doc, typ, shared.NewChipiCallbacks(&TestEnumResolver{}))
 				require.NoError(g, err)
 
 				data, err := json.Marshal(schema)
@@ -227,7 +319,10 @@ func TestSchema(t *testing.T) {
 						"Age": {
 							"type": "integer",
 							"format": "int64"
-						}
+						},
+						"Sex": {"$ref":"#/components/schemas/schema.UserSex"},
+						"Time": {"format":"date-time", "type":"string"},
+						"Duration": {"format":"int64", "type":"integer"}
 					}
 				}`, string(data))
 			})
@@ -310,6 +405,41 @@ func TestSchema(t *testing.T) {
 							"items": {
 								"$ref": "#/components/schemas/schema.User"
 							}
+						}
+					}
+				}`, string(data))
+			})
+
+			g.It("should generate valid name for generic structures", func() {
+				st := Generic[Embedded]{
+					Name: "john",
+				}
+				typ := reflect.TypeOf(&st)
+				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
+				require.NoError(g, err)
+
+				data, err := json.Marshal(schema)
+				require.NoError(g, err)
+				// check returned schema
+				assert.JSONEq(g, `{
+					"$ref": "#/components/schemas/schema.Generic..schema.Embedded"
+				}`, string(data))
+
+				userSchema, found := doc.Components.Schemas[typeName(typ.Elem())]
+				require.True(g, found)
+
+				data, err = json.Marshal(userSchema)
+				require.NoError(g, err)
+
+				// check returned schema
+				assert.JSONEq(g, `{
+					"type": "object",
+					"properties": {
+						"Name": {
+							"type": "string"
+						},
+						"Value": {
+							"$ref": "#/components/schemas/schema.Embedded"
 						}
 					}
 				}`, string(data))

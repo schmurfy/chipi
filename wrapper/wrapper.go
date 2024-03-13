@@ -34,7 +34,13 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 		setValuePtr := reflect.New(fieldType)
 		setValuePtr.Elem().Set(setValue)
 		return setValuePtr, nil
-
+	case reflect.Map:
+		outMapPtr := reflect.New(fieldType)
+		err := json.Unmarshal([]byte(value), outMapPtr.Interface())
+		if err != nil {
+			return _noValue, err
+		}
+		return outMapPtr.Elem(), nil
 	case reflect.Slice:
 		param := strings.Split(
 			strings.Trim(value, `[]`),
@@ -157,11 +163,7 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 	// query
 	queryValue := ret.Elem().FieldByName("Query")
 	if queryValue.IsValid() {
-		for i := 0; i < queryValue.NumField(); i++ {
-
-			queryFieldName := queryValue.Type().Field(i).Name
-			structField, _ := queryValue.Type().FieldByName(queryFieldName)
-
+		for _, structField := range reflect.VisibleFields(queryValue.Type()) {
 			// Tag "json" overwrite the key
 			parsedQueryFieldName := schema.ParseJsonTag(structField).Name
 			if parsedQueryFieldName == structField.Name {
@@ -172,7 +174,7 @@ func createFilledRequestObject(r *http.Request, obj interface{}, parsingErrors m
 			if value, ok := r.URL.Query()[parsedQueryFieldName]; ok {
 				err = setFValue(ctx,
 					path,
-					queryValue.Field(i),
+					queryValue.FieldByIndex(structField.Index),
 					value[0],
 				)
 				if err != nil {

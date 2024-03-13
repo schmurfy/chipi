@@ -3,7 +3,10 @@ package shared
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
+
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 // unused for now,
@@ -50,15 +53,90 @@ func (ai AttributeInfo) AppendPath(segment string) AttributeInfo {
 	}
 }
 
-type FilterInterface interface {
-	FilterRoute(ctx context.Context, method string, pattern string) (bool, error)
-	FilterField(ctx context.Context, fieldInfo AttributeInfo) (bool, error)
+type EnumEntry struct {
+	Title interface{}
+	Value interface{}
+}
+type Enum = []EnumEntry
+
+// This object can implement FilterRoute/FilterField/EnumResolver/SchemaResolver
+type ChipiCallbackInterface interface {
 }
 
-// type RoutePatcherInterface interface {
-// 	PatchRoute()
-// }
+type FilterRouteInterface interface {
+	FilterRoute(ctx context.Context, method string, pattern string) (bool, error)
+}
+type FilterFieldInterface interface {
+	FilterField(ctx context.Context, fieldInfo AttributeInfo) (bool, error)
+}
+type EnumResolverInterface interface {
+	EnumResolver(t reflect.Type) (bool, Enum)
+}
+type SchemaResolverInterface interface {
+	// CastName is the string after the `as:` in the field tag
+	// e.g. `chipi:"as:uuid"` => CastName = "uuid"
+	// The openapi3.Schema is the schema that will be used to define the CastName field
+	// The boolean decide if we create a $ref in the openapi file
+	SchemaResolver(fieldInfo AttributeInfo, castName string) (*openapi3.Schema, bool)
+}
 
-// type FieldFilterInterface interface {
-// 	FilterRoute()
-// }
+type ExtraComponentsAndPathsInterface interface {
+	ExtraComponentsAndPaths() (openapi3.Schemas, openapi3.Paths)
+}
+
+type ChipiCallbacks struct {
+	FilterRouteInterface
+	FilterFieldInterface
+	EnumResolverInterface
+	SchemaResolverInterface
+	i ChipiCallbackInterface
+}
+
+var _ FilterRouteInterface = (*ChipiCallbacks)(nil)
+var _ FilterFieldInterface = (*ChipiCallbacks)(nil)
+var _ EnumResolverInterface = (*ChipiCallbacks)(nil)
+var _ SchemaResolverInterface = (*ChipiCallbacks)(nil)
+
+func NewChipiCallbacks(i ChipiCallbackInterface) ChipiCallbacks {
+	return ChipiCallbacks{i: i}
+}
+
+func (c *ChipiCallbacks) FilterRoute(ctx context.Context, method string, pattern string) (bool, error) {
+	if filterInterface, hasFilter := c.i.(FilterRouteInterface); c.i != nil && hasFilter {
+		return filterInterface.FilterRoute(ctx, method, pattern)
+	} else {
+		return false, nil
+	}
+}
+
+func (c *ChipiCallbacks) FilterField(ctx context.Context, fieldInfo AttributeInfo) (bool, error) {
+	if filterInterface, hasFilter := c.i.(FilterFieldInterface); c.i != nil && hasFilter {
+		return filterInterface.FilterField(ctx, fieldInfo)
+	} else {
+		return false, nil
+	}
+}
+
+func (c *ChipiCallbacks) EnumResolver(t reflect.Type) (bool, Enum) {
+	if enumInterface, hasEnum := c.i.(EnumResolverInterface); c.i != nil && hasEnum {
+		return enumInterface.EnumResolver(t)
+	} else {
+		return false, nil
+	}
+}
+
+func (c *ChipiCallbacks) SchemaResolver(fieldInfo AttributeInfo, castName string) (*openapi3.Schema, bool) {
+	if schemaInterface, hasSchema := c.i.(SchemaResolverInterface); c.i != nil && hasSchema {
+		return schemaInterface.SchemaResolver(fieldInfo, castName)
+	} else {
+		return openapi3.NewObjectSchema(), false
+	}
+}
+
+func (c *ChipiCallbacks) ExtraComponentsAndPaths() (openapi3.Schemas, openapi3.Paths) {
+	if schemaInterface, hasExtraComponents := c.i.(ExtraComponentsAndPathsInterface); c.i != nil && hasExtraComponents {
+		return schemaInterface.ExtraComponentsAndPaths()
+	} else {
+		return nil, openapi3.Paths{}
+	}
+}

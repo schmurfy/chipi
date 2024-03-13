@@ -16,6 +16,7 @@ type jsonTag struct {
 	Ignored    *bool
 	Deprecated *bool
 	Required   *bool
+	CastName   *string
 
 	// self contained
 	Explode     *bool
@@ -59,6 +60,11 @@ func ParseJsonTag(f reflect.StructField) *jsonTag {
 				ret.Deprecated = boolPtr(true)
 			case "required":
 				ret.Required = boolPtr(true)
+			default:
+				if strings.HasPrefix(value, "as:") {
+					castName := strings.TrimPrefix(value, "as:")
+					ret.CastName = &castName
+				}
 			}
 		}
 	}

@@ -106,24 +106,24 @@ func TestBuilder(t *testing.T) {
 				})
 
 				g.It("should not filter routes", func() {
-					json, err := b.GenerateJson(ctx, nil)
+					json, err := b.GenerateJson(ctx, shared.NewChipiCallbacks(nil))
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
 
-					require.NotNil(g, swagger.Paths[routePath])
+					require.NotNil(g, swagger.Paths.Map()[routePath])
 				})
 				g.It("should filter routes", func() {
 					filter := TestFilter{AllowedRoutes: []TestRoute{
 						{Method: "POST", Pattern: "other/route"},
 					}}
 
-					json, err := b.GenerateJson(ctx, &filter)
+					json, err := b.GenerateJson(ctx, shared.NewChipiCallbacks(&filter))
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
 
-					require.Nil(g, swagger.Paths[routePath])
+					require.Nil(g, swagger.Paths.Map()[routePath])
 				})
 
 				g.It("should authorize routes", func() {
@@ -131,12 +131,12 @@ func TestBuilder(t *testing.T) {
 						{Method: "POST", Pattern: routePath},
 					}}
 
-					json, err := b.GenerateJson(ctx, &filter)
+					json, err := b.GenerateJson(ctx, shared.NewChipiCallbacks(&filter))
 					require.Nil(g, err)
 
 					swagger := convertToSwagger(g, json)
 
-					require.NotNil(g, swagger.Paths[routePath])
+					require.NotNil(g, swagger.Paths.Map()[routePath])
 				})
 
 			})

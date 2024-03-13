@@ -25,18 +25,51 @@ func New() (*Schema, error) {
 }
 
 func (s *Schema) GenerateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type) (*openapi3.SchemaRef, error) {
-	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, nil)
+	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, shared.NewChipiCallbacks(nil))
 }
 
-func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, filterObject shared.FilterInterface) (*openapi3.SchemaRef, error) {
-	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, filterObject)
+func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
+	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, callbacksObject)
 }
 
-func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.SchemaRef, error) {
+func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3.T, castName string, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
+	if !fieldInfo.Empty() {
+		filter, err := callbacksObject.FilterField(ctx, fieldInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		if filter {
+			return nil, nil
+		}
+	}
+
+	if doc.Components.Schemas == nil {
+		doc.Components.Schemas = make(openapi3.Schemas)
+	}
+
+	customName := fmt.Sprintf("custom_%s", castName)
+	if _, found := doc.Components.Schemas[customName]; !found {
+		var createRef bool
+		schema := &openapi3.SchemaRef{}
+		schema.Value, createRef = callbacksObject.SchemaResolver(fieldInfo, castName)
+		if createRef {
+			doc.Components.Schemas[customName] = schema
+		} else {
+			return schema, nil
+		}
+	}
+
+	return &openapi3.SchemaRef{
+		Ref: fmt.Sprintf("#/components/schemas/%s", customName),
+	}, nil
+}
+
+func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
 	fullName := typeName(t)
 
-	if (filterObject != nil && !reflect.ValueOf(filterObject).IsNil()) && !fieldInfo.Empty() {
-		filter, err := filterObject.FilterField(ctx, fieldInfo)
+	if !fieldInfo.Empty() {
+		filter, err := callbacksObject.FilterField(ctx, fieldInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +119,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			}
 
 		} else {
-			items, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, filterObject)
+			items, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, callbacksObject)
 			if err != nil {
 				return nil, err
 			}
@@ -105,14 +138,16 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		}
 
 	case reflect.Map:
-		additionalProperties, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, filterObject)
+		additionalProperties, err := s.generateSchemaFor(ctx, doc, t.Elem(), 0, fieldInfo, callbacksObject)
 		if err != nil {
 			return nil, err
 		}
 
 		schema.Value = &openapi3.Schema{
-			Type:                 "object",
-			AdditionalProperties: additionalProperties,
+			Type: "object",
+			AdditionalProperties: openapi3.AdditionalProperties{
+				Schema: additionalProperties,
+			},
 		}
 
 	// struct schemas should be stored as components
@@ -122,6 +157,9 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			return schema, nil
 		}
 
+		if doc.Components == nil {
+			doc.Components = &openapi3.Components{}
+		}
 		if doc.Components.Schemas == nil {
 			doc.Components.Schemas = make(openapi3.Schemas)
 		}
@@ -129,7 +167,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		// if we have an anonymous structure, inline it and stop there
 		if (t.Name() == "") || (inlineLevel > 0) {
 			var err error
-			schema.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, filterObject)
+			schema.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, callbacksObject)
 			return schema, err
 		}
 
@@ -143,17 +181,44 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			doc.Components.Schemas[fullName] = ref
 
 			// fmt.Printf("%s - BEFORE: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
-			ref.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, filterObject)
+			ref.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, callbacksObject)
 			if err != nil {
 				return nil, err
 			}
 			// fmt.Printf("%s - AFTER: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 		}
 
-		schema.Ref = structReference(t)
+		schema.Ref = schemaReference(t)
+	case reflect.Interface:
+		schema.Value = openapi3.NewSchema()
 
 	default:
 		return nil, fmt.Errorf("unknown type: %v", t.Kind())
+	}
+
+	// Handle the case of enums
+	if isEnum, enum := callbacksObject.EnumResolver(t); isEnum {
+		_, found := doc.Components.Schemas[fullName]
+		if !found {
+			for _, enumEntry := range enum {
+				schema.Value.OneOf = append(schema.Value.OneOf, &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Title: fmt.Sprint(enumEntry.Title),
+						Extensions: map[string]any{
+							"const": enumEntry.Value,
+						},
+						Type:   "const",
+						Format: schema.Value.Format,
+					},
+				})
+			}
+			doc.Components.Schemas[fullName] = &openapi3.SchemaRef{
+				Value: schema.Value,
+			}
+		}
+
+		schema.Ref = schemaReference(t)
+		schema.Value = nil
 	}
 
 	return schema, nil
@@ -177,13 +242,12 @@ func typeName(t reflect.Type) string {
 	}
 }
 
-func structReference(t reflect.Type) string {
+func schemaReference(t reflect.Type) string {
 	return fmt.Sprintf("#/components/schemas/%s", typeName(t))
 }
 
 func pkgName(p string) string {
 	parts := strings.Split(p, "/")
-
 	return parts[len(parts)-1]
 }
 
@@ -191,7 +255,7 @@ func typePkgName(t reflect.Type) string {
 	return pkgName(t.PkgPath())
 }
 
-func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, filterObject shared.FilterInterface) (*openapi3.Schema, error) {
+func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
 		Type: "object",
 	}
@@ -201,15 +265,13 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 
 	fieldInfo = fieldInfo.AppendPath(structName)
 
-	if filterObject != nil && !reflect.ValueOf(filterObject).IsNil() {
-		filter, err := filterObject.FilterField(ctx, fieldInfo)
-		if err != nil {
-			return nil, err
-		}
+	filter, err := callbacksObject.FilterField(ctx, fieldInfo)
+	if err != nil {
+		return nil, err
+	}
 
-		if filter {
-			return nil, nil
-		}
+	if filter {
+		return nil, nil
 	}
 
 	for i := 0; i < t.NumField(); i++ {
@@ -217,7 +279,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 		fTypeName := typeName(f.Type)
 		tag := ParseJsonTag(f)
 
-		if (tag.Ignored != nil) && *tag.Ignored {
+		if !f.IsExported() || (tag.Ignored != nil) && *tag.Ignored {
 			continue
 		}
 
@@ -226,7 +288,13 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			WithModelPath(pkgName + "." + structName + "." + fieldName).
 			AppendPath(fieldName)
 
-		fieldSchema, err := s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, filterObject)
+		var fieldSchema *openapi3.SchemaRef
+		if tag.CastName != nil {
+			fieldSchema, err = s.generateSchemaWithCastedType(ctx, doc, *tag.CastName, inlineLevel-1, fi, callbacksObject)
+		} else {
+			fieldSchema, err = s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, callbacksObject)
+		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -267,6 +335,9 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			// fmt.Printf("wtf: %s.%s (%s)\n", t.Name(), f.Name, fieldSchema.Ref)
 			// fieldSchema.Value = openapi3.NewSchema()
 		} else {
+			if fieldSchema.Value == nil {
+				fieldSchema.Value = openapi3.NewSchema()
+			}
 			fieldSchema.Value.ReadOnly = (tag.ReadOnly != nil) && *tag.ReadOnly
 			fieldSchema.Value.Nullable = (tag.Nullable != nil) && *tag.Nullable
 			fieldSchema.Value.Deprecated = (tag.Deprecated != nil) && *tag.Deprecated

@@ -18,11 +18,13 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 
 	queryStructType := pathField.Type
 	if queryStructType.Kind() != reflect.Struct {
-		return errors.New("expected struct for Query")
+		return errors.Errorf("expected struct for Query : %s ", requestObjectType.Name())
 	}
 
-	for i := 0; i < queryStructType.NumField(); i++ {
-		field := queryStructType.Field(i)
+	for _, field := range reflect.VisibleFields(queryStructType) {
+		if !field.IsExported() || field.Anonymous {
+			continue
+		}
 
 		fieldSchema, err := b.schema.GenerateSchemaFor(ctx, swagger, field.Type)
 		if err != nil {

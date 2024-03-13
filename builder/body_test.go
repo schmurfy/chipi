@@ -10,6 +10,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/schmurfy/chipi/request"
+	"github.com/schmurfy/chipi/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -66,7 +67,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return an error if structure does not implements BodyDecoder", func() {
 			req := bodyTestWithoutDecoderRequest{}
-			err := b.generateBodyDoc(ctx, b.swagger, &op, &req, reflect.TypeOf(req), nil)
+			err := b.generateBodyDoc(ctx, b.swagger, &op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.Error(g, err)
 
 			assert.Contains(g, err.Error(), "must implement BodyDecoder")
@@ -74,7 +75,7 @@ func TestBodyGenerator(t *testing.T) {
 
 		g.It("should return nil if structure implements BodyDecoder", func() {
 			req := bodyTestWithDecoderRequest{}
-			err := b.generateBodyDoc(ctx, b.swagger, &op, &req, reflect.TypeOf(req), nil)
+			err := b.generateBodyDoc(ctx, b.swagger, &op, &req, reflect.TypeOf(req), shared.NewChipiCallbacks(nil))
 			require.NoError(g, err)
 		})
 
