@@ -153,6 +153,10 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 	return nil
 }
 
+func (b *Builder) ClearCache() {
+	b.swagger.Components.Schemas = make(openapi3.Schemas)
+}
+
 func (b *Builder) GenerateJson(ctx context.Context, callbacksObject shared.ChipiCallbacks) ([]byte, error) {
 
 	swagger := *b.swagger
