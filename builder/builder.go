@@ -157,7 +157,7 @@ func (b *Builder) ClearCache() {
 	b.swagger.Components.Schemas = make(openapi3.Schemas)
 }
 
-func (b *Builder) GenerateJson(ctx context.Context, callbacksObject shared.ChipiCallbacks) ([]byte, error) {
+func (b *Builder) GenerateSwagger(ctx context.Context, callbacksObject shared.ChipiCallbacks) (*openapi3.T, error) {
 
 	swagger := *b.swagger
 	for _, m := range b.methods {
@@ -226,6 +226,16 @@ func (b *Builder) GenerateJson(ctx context.Context, callbacksObject shared.Chipi
 	}
 	for key, value := range paths.Map() {
 		swagger.Paths.Set(key, value)
+	}
+
+	return &swagger, nil
+}
+
+func (b *Builder) GenerateJson(ctx context.Context, callbacksObject shared.ChipiCallbacks) ([]byte, error) {
+
+	swagger, err := b.GenerateSwagger(ctx, callbacksObject)
+	if err != nil {
+		return nil, err
 	}
 
 	json, err := swagger.MarshalJSON()
