@@ -101,7 +101,6 @@ func generateDataForFile(path string, noWrite bool) error {
 				return err
 			}
 
-			fmt.Printf("Saved %s\n", generatedPath)
 		}
 	}
 
