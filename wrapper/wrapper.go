@@ -66,9 +66,11 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 		return setValue.Elem(), nil
 
 	case reflect.String:
-		return reflect.ValueOf(
-			strings.Trim(value, `"`),
-		).Convert(fieldType), nil
+		trimed := value
+		if len(trimed) > 2 && trimed[0] == '"' && trimed[len(trimed)-1] == '"' {
+			trimed = trimed[1 : len(trimed)-1] // remove quotes only if they are at the beginning AND the end
+		}
+		return reflect.ValueOf(trimed).Convert(fieldType), nil
 
 	case reflect.Bool:
 		setValue, err := strconv.ParseBool(value)
