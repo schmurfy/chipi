@@ -30,8 +30,13 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 		if err != nil {
 			return err
 		}
+		parsedTag := schema.ParseJsonTag(field)
 
-		name := schema.ParseJsonTag(field).Name
+		if parsedTag.Ignored != nil && *parsedTag.Ignored {
+			continue
+		}
+
+		name := parsedTag.Name
 		if name == field.Name {
 			name = shared.ToSnakeCase(field.Name)
 		}
