@@ -200,17 +200,15 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 	if isEnum, enum := callbacksObject.EnumResolver(t); isEnum {
 		_, found := doc.Components.Schemas[fullName]
 		if !found {
+			enumDescriptions := []any{}
 			for _, enumEntry := range enum {
-				schema.Value.OneOf = append(schema.Value.OneOf, &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
-						Title: fmt.Sprint(enumEntry.Title),
-						Extensions: map[string]any{
-							"const": enumEntry.Value,
-						},
-						Type:   "const",
-						Format: schema.Value.Format,
-					},
-				})
+				schema.Value.Enum = append(schema.Value.Enum, enumEntry.Value)
+				enumDescriptions = append(enumDescriptions, enumEntry.Title)
+			}
+			if len(enumDescriptions) > 0 {
+				schema.Value.Extensions = map[string]any{
+					"x-enum-varnames": enumDescriptions,
+				}
 			}
 			doc.Components.Schemas[fullName] = &openapi3.SchemaRef{
 				Value: schema.Value,
