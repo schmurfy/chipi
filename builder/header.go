@@ -27,7 +27,13 @@ func (b *Builder) generateHeadersDoc(ctx context.Context, swagger *openapi3.T, o
 			return err
 		}
 
-		param := openapi3.NewHeaderParameter(field.Name).
+		name := field.Tag.Get("name")
+		headerName := field.Name
+		if name != "" {
+			headerName = name
+		}
+
+		param := openapi3.NewHeaderParameter(headerName).
 			WithSchema(schema.Value)
 
 		err = fillParamFromTags(requestObjectType, param, field, "Header")
