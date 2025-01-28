@@ -72,7 +72,7 @@ func (f *TestFilter) FilterField(ctx context.Context, fieldInfo shared.Attribute
 	return true, nil
 }
 
-func (f *TestFilter) SchemaResolver(fieldInfo shared.AttributeInfo, castName string) (*openapi3.Schema, bool) {
+func (f *TestFilter) SchemaResolver(fieldInfo shared.AttributeInfo, castName string, _ reflect.Type, _ shared.GenerateSchemaCallbackType) (*openapi3.Schema, bool) {
 	switch castName {
 	case "datetime":
 		return openapi3.NewDateTimeSchema(), false
@@ -100,7 +100,7 @@ func (e *TestEnumResolver) EnumResolver(t reflect.Type) (bool, shared.Enum) {
 	return false, nil
 }
 
-func (e *TestEnumResolver) SchemaResolver(fieldInfo shared.AttributeInfo, castName string) (*openapi3.Schema, bool) {
+func (e *TestEnumResolver) SchemaResolver(fieldInfo shared.AttributeInfo, castName string, _ reflect.Type, _ shared.GenerateSchemaCallbackType) (*openapi3.Schema, bool) {
 	switch castName {
 	case "datetime":
 		return openapi3.NewDateTimeSchema(), false
