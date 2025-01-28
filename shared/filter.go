@@ -72,12 +72,15 @@ type FilterFieldInterface interface {
 type EnumResolverInterface interface {
 	EnumResolver(t reflect.Type) (bool, Enum)
 }
+
+type GenerateSchemaCallbackType func(t reflect.Type, fieldInfo AttributeInfo) (*openapi3.SchemaRef, error)
+
 type SchemaResolverInterface interface {
 	// CastName is the string after the `as:` in the field tag
 	// e.g. `chipi:"as:uuid"` => CastName = "uuid"
 	// The openapi3.Schema is the schema that will be used to define the CastName field
 	// The boolean decide if we create a $ref in the openapi file
-	SchemaResolver(fieldInfo AttributeInfo, castName string) (*openapi3.Schema, bool)
+	SchemaResolver(fieldInfo AttributeInfo, castName string, fieldTyp reflect.Type, newSchemaCallbackType GenerateSchemaCallbackType) (*openapi3.Schema, bool)
 }
 
 type ExtraComponentsAndPathsInterface interface {
@@ -125,9 +128,9 @@ func (c *ChipiCallbacks) EnumResolver(t reflect.Type) (bool, Enum) {
 	}
 }
 
-func (c *ChipiCallbacks) SchemaResolver(fieldInfo AttributeInfo, castName string) (*openapi3.Schema, bool) {
+func (c *ChipiCallbacks) SchemaResolver(fieldInfo AttributeInfo, castName string, fieldTyp reflect.Type, newSchemaCallbackType GenerateSchemaCallbackType) (*openapi3.Schema, bool) {
 	if schemaInterface, hasSchema := c.i.(SchemaResolverInterface); c.i != nil && hasSchema {
-		return schemaInterface.SchemaResolver(fieldInfo, castName)
+		return schemaInterface.SchemaResolver(fieldInfo, castName, fieldTyp, newSchemaCallbackType)
 	} else {
 		return openapi3.NewObjectSchema(), false
 	}

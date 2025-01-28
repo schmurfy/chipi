@@ -32,7 +32,13 @@ func (s *Schema) GenerateFilteredSchemaFor(ctx context.Context, doc *openapi3.T,
 	return s.generateSchemaFor(ctx, doc, t, 0, shared.AttributeInfo{}, callbacksObject)
 }
 
-func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3.T, castName string, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
+func (s *Schema) newGenerateSchemaCallback(ctx context.Context, doc *openapi3.T, inlineLevel int, callbacksObject shared.ChipiCallbacks) shared.GenerateSchemaCallbackType {
+	return func(t reflect.Type, fieldInfo shared.AttributeInfo) (*openapi3.SchemaRef, error) {
+		return s.generateSchemaFor(ctx, doc, t, inlineLevel, fieldInfo, callbacksObject)
+	}
+}
+
+func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3.T, t reflect.Type, castName string, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.SchemaRef, error) {
 	if !fieldInfo.Empty() {
 		filter, err := callbacksObject.FilterField(ctx, fieldInfo)
 		if err != nil {
@@ -52,7 +58,7 @@ func (s *Schema) generateSchemaWithCastedType(ctx context.Context, doc *openapi3
 	if _, found := doc.Components.Schemas[customName]; !found {
 		var createRef bool
 		schema := &openapi3.SchemaRef{}
-		schema.Value, createRef = callbacksObject.SchemaResolver(fieldInfo, castName)
+		schema.Value, createRef = callbacksObject.SchemaResolver(fieldInfo, castName, t, s.newGenerateSchemaCallback(ctx, doc, inlineLevel, callbacksObject))
 		if createRef {
 			doc.Components.Schemas[customName] = schema
 		} else {
@@ -288,7 +294,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 
 		var fieldSchema *openapi3.SchemaRef
 		if tag.CastName != nil {
-			fieldSchema, err = s.generateSchemaWithCastedType(ctx, doc, *tag.CastName, inlineLevel-1, fi, callbacksObject)
+			fieldSchema, err = s.generateSchemaWithCastedType(ctx, doc, f.Type, *tag.CastName, inlineLevel-1, fi, callbacksObject)
 		} else {
 			fieldSchema, err = s.generateSchemaFor(ctx, doc, f.Type, inlineLevel-1, fi, callbacksObject)
 		}
