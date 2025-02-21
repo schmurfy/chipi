@@ -186,12 +186,10 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			// forward declaration of the current type to handle recursion properly
 			doc.Components.Schemas[fullName] = ref
 
-			// fmt.Printf("%s - BEFORE: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 			ref.Value, err = s.generateStructureSchema(ctx, doc, t, inlineLevel, fieldInfo, callbacksObject)
 			if err != nil {
 				return nil, err
 			}
-			// fmt.Printf("%s - AFTER: %+v\n", t.Name(), doc.Components.Schemas[t.Name()])
 		}
 
 		schema.Ref = schemaReference(t)
@@ -318,51 +316,48 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 		}
 
 		if fieldSchema.Ref != "" {
-			if (tag.Nullable != nil) && *tag.Nullable {
-				// nullableSchemaRef := openapi3.NewSchemaRef("", &openapi3.Schema{
-				// 	OneOf: openapi3.SchemaRefs{
-				// 		openapi3.NewSchemaRef("", &openapi3.Schema{Type: "null"}),
-				// 		fieldSchema,
-				// 	},
-				// })
-
-				// fieldSchema = nullableSchemaRef
-
-				fieldSchema.Value = openapi3.NewSchema()
-				fieldSchema.Value.Nullable = *tag.Nullable
-
-				if tag.Description != nil {
-					fieldSchema.Value.Description = *tag.Description
+			if tag.ReadOnly != nil || tag.Nullable != nil || tag.Deprecated != nil || tag.Example != nil {
+				// As those tags are not supported when using a ref we need to use a allOf
+				// with the ref inside and apply the tag to the parent
+				if fieldSchema.Value == nil {
+					fieldSchema.Value = openapi3.NewSchema()
 				}
-			}
 
-			// fmt.Printf("wtf: %s.%s (%s)\n", t.Name(), f.Name, fieldSchema.Ref)
-			// fieldSchema.Value = openapi3.NewSchema()
+				fieldSchema.Value.AllOf = openapi3.SchemaRefs{openapi3.NewSchemaRef(fieldSchema.Ref, nil)}
+				fieldSchema.Ref = ""
+				fieldSchema.Value.ReadOnly = tag.GetReadOnly()
+				fieldSchema.Value.Nullable = tag.GetNullable()
+				fieldSchema.Value.Deprecated = tag.GetDeprecated()
+				if tag.Example != nil {
+					fieldSchema.Value.Example = tag.GetExample()
+				}
+				if tag.Description != nil {
+					fieldSchema.Value.Description = tag.GetDescription()
+				}
+			} else if tag.Description != nil {
+				fieldSchema.Value = openapi3.NewSchema()
+				fieldSchema.Value.Description = tag.GetDescription()
+			}
 		} else {
 			if fieldSchema.Value == nil {
 				fieldSchema.Value = openapi3.NewSchema()
 			}
-			fieldSchema.Value.ReadOnly = (tag.ReadOnly != nil) && *tag.ReadOnly
-			fieldSchema.Value.Nullable = (tag.Nullable != nil) && *tag.Nullable
-			fieldSchema.Value.Deprecated = (tag.Deprecated != nil) && *tag.Deprecated
+			fieldSchema.Value.ReadOnly = tag.GetReadOnly()
+			fieldSchema.Value.Nullable = tag.GetNullable()
+			fieldSchema.Value.Deprecated = tag.GetDeprecated()
 
 			if tag.Description != nil {
-				fieldSchema.Value.Description = *tag.Description
+				fieldSchema.Value.Description = tag.GetDescription()
 			}
 
 			if tag.Example != nil {
-				fieldSchema.Value.Example = *tag.Example
+				fieldSchema.Value.Example = tag.GetExample()
 			}
-
-			if tag.Required != nil && *tag.Required {
-				ret.Required = append(fieldSchema.Value.Required, fieldName)
-			}
-			// if f.Name == "Coordinates" {
-			// 	fmt.Printf("[DD] %s.%s : %+v\n", t.Name(), f.Name, tag)
-			// }
-
 		}
 
+		if tag.Required != nil && *tag.Required {
+			ret.Required = append(ret.Required, fieldName)
+		}
 		ret.WithPropertyRef(tag.Name, fieldSchema)
 	}
 
