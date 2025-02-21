@@ -25,6 +25,73 @@ type jsonTag struct {
 	Style       *string
 }
 
+func (t *jsonTag) GetOmitEmpty() bool {
+	if t.OmitEmpty == nil {
+		return false
+	}
+	return *t.OmitEmpty
+}
+func (t *jsonTag) GetReadOnly() bool {
+	if t.ReadOnly == nil {
+		return false
+	}
+	return *t.ReadOnly
+}
+func (t *jsonTag) GetWriteOnly() bool {
+	if t.WriteOnly == nil {
+		return false
+	}
+	return *t.WriteOnly
+}
+func (t *jsonTag) GetExplode() bool {
+	if t.Explode == nil {
+		return false
+	}
+	return *t.Explode
+}
+func (t *jsonTag) GetNullable() bool {
+	if t.Nullable == nil {
+		return false
+	}
+	return *t.Nullable
+}
+func (t *jsonTag) GetIgnored() bool {
+	if t.Ignored == nil {
+		return false
+	}
+	return *t.Ignored
+}
+func (t *jsonTag) GetDeprecated() bool {
+	if t.Deprecated == nil {
+		return false
+	}
+	return *t.Deprecated
+}
+func (t *jsonTag) GetRequired() bool {
+	if t.Required == nil {
+		return false
+	}
+	return *t.Required
+}
+func (t *jsonTag) GetCastName() string {
+	if t.CastName == nil {
+		return ""
+	}
+	return *t.CastName
+}
+func (t *jsonTag) GetDescription() string {
+	if t.Description == nil {
+		return ""
+	}
+	return *t.Description
+}
+func (t *jsonTag) GetExample() string {
+	if t.Example == nil {
+		return ""
+	}
+	return *t.Example
+}
+
 func ParseJsonTag(f reflect.StructField) *jsonTag {
 	ret := &jsonTag{
 		Name: f.Name,
