@@ -9,3 +9,7 @@ func Contains[T comparable](slice []T, value T) bool {
 
 	return false
 }
+
+func GetPtr[T any](v T) *T {
+	return &v
+}
