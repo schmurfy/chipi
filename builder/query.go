@@ -43,7 +43,7 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 
 		param := openapi3.NewQueryParameter(name)
 
-		if (fieldSchema.Ref != "") || (fieldSchema.Value.Type == "object") {
+		if (fieldSchema.Ref != "") || (fieldSchema.Value.Type.Includes(openapi3.TypeObject)) {
 			// we need to wrap the schema
 			param.Content = openapi3.Content{
 				"application/json": &openapi3.MediaType{

@@ -110,7 +110,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 
 	case reflect.Float32, reflect.Float64:
 		schema.Value = &openapi3.Schema{
-			Type:   "number",
+			Type:   shared.GetPtr(openapi3.Types{openapi3.TypeNumber}),
 			Format: "double",
 		}
 
@@ -120,7 +120,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		// []byte
 		if t.Elem().Kind() == reflect.Uint8 {
 			schema.Value = &openapi3.Schema{
-				Type:   "string",
+				Type:   shared.GetPtr(openapi3.Types{openapi3.TypeString}),
 				Format: "binary",
 			}
 
@@ -137,7 +137,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 			// fmt.Printf("items: %+v\n", items)
 
 			schema.Value = &openapi3.Schema{
-				Type:  "array",
+				Type:  shared.GetPtr(openapi3.Types{openapi3.TypeArray}),
 				Items: items,
 			}
 
@@ -150,7 +150,7 @@ func (s *Schema) generateSchemaFor(ctx context.Context, doc *openapi3.T, t refle
 		}
 
 		schema.Value = &openapi3.Schema{
-			Type: "object",
+			Type: shared.GetPtr(openapi3.Types{openapi3.TypeObject}),
 			AdditionalProperties: openapi3.AdditionalProperties{
 				Schema: additionalProperties,
 			},
@@ -259,7 +259,7 @@ func typePkgName(t reflect.Type) string {
 
 func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t reflect.Type, inlineLevel int, fieldInfo shared.AttributeInfo, callbacksObject shared.ChipiCallbacks) (*openapi3.Schema, error) {
 	ret := &openapi3.Schema{
-		Type: "object",
+		Type: shared.GetPtr(openapi3.Types{openapi3.TypeObject}),
 	}
 
 	pkgName := shared.ToSnakeCase(typePkgName(t))
@@ -363,7 +363,7 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 
 	// object type requires properties
 	if ret.Properties != nil {
-		ret.Type = "object"
+		ret.Type = shared.GetPtr(openapi3.Types{openapi3.TypeObject})
 	}
 
 	return ret, nil
