@@ -10,7 +10,7 @@ import (
 	"github.com/schmurfy/chipi/shared"
 )
 
-func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type) error {
+func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, callbacksObject shared.ChipiCallbacks) error {
 	pathField, found := requestObjectType.FieldByName("Query")
 	if !found {
 		return nil
@@ -39,6 +39,14 @@ func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *opena
 		name := parsedTag.Name
 		if name == field.Name {
 			name = shared.ToSnakeCase(field.Name)
+		}
+
+		if parsedTag.CastName != nil {
+			fieldSchema.Value, _ = callbacksObject.SchemaResolver(shared.AttributeInfo{}, *parsedTag.CastName, field.Type, func(t reflect.Type, fieldInfo shared.AttributeInfo) (*openapi3.SchemaRef, error) {
+				return fieldSchema, nil
+			})
+			op.AddParameter(openapi3.NewQueryParameter(name).WithSchema(fieldSchema.Value))
+			continue
 		}
 
 		param := openapi3.NewQueryParameter(name)
