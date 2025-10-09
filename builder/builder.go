@@ -193,7 +193,7 @@ func (b *Builder) GenerateSwagger(ctx context.Context, callbacksObject shared.Ch
 		}
 
 		// Query parameters
-		err = b.generateQueryParametersDoc(ctx, &swagger, op, typ)
+		err = b.generateQueryParametersDoc(ctx, &swagger, op, typ, callbacksObject)
 		if err != nil {
 			return nil, err
 		}
