@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/franela/goblin"
 	"github.com/go-chi/chi/v5"
@@ -87,6 +88,9 @@ func TestWrapper(t *testing.T) {
 				Bool    bool
 				BoolPtr *bool
 
+				Time    time.Time
+				TimePtr *time.Time
+
 				Loc    loc
 				LocPtr *loc
 			}
@@ -122,6 +126,10 @@ func TestWrapper(t *testing.T) {
 				{"Str", "a few words", "a few words"},
 				{"Bool", "true", true},
 
+				{"Time", "2023-10-29T15:30:45Z", time.Date(2023, 10, 29, 15, 30, 45, 0, time.UTC)},
+				{"Time", "2023-12-25T08:15:30+02:00", time.Date(2023, 12, 25, 8, 15, 30, 0, time.FixedZone("", 2*3600))},
+				{"TimePtr", "2024-01-01T00:00:00Z", time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
+
 				{"LocPtr", `{"Type": "toto"}`, loc{Type: "toto"}},
 				{"Loc", `{"Type": "titi"}`, loc{Type: "titi"}},
 			}
@@ -147,6 +155,30 @@ func TestWrapper(t *testing.T) {
 
 		})
 
+		g.Describe("time.Time parsing errors", func() {
+			g.It("should handle invalid time format", func() {
+				ctx := context.Background()
+				st := struct {
+					Time time.Time
+				}{}
+				vv := reflect.ValueOf(&st).Elem().FieldByName("Time")
+
+				err := setFValue(ctx, "unused", vv, "invalid-time-format")
+				require.Error(g, err)
+			})
+
+			g.It("should handle invalid time format for pointer", func() {
+				ctx := context.Background()
+				st := struct {
+					TimePtr *time.Time
+				}{}
+				vv := reflect.ValueOf(&st).Elem().FieldByName("TimePtr")
+
+				err := setFValue(ctx, "unused", vv, "2023-13-45T25:70:80Z")
+				require.Error(g, err)
+			})
+		})
+
 		g.Describe("incoming request", func() {
 			type testRequest struct {
 				Path struct {
@@ -162,6 +194,8 @@ func TestWrapper(t *testing.T) {
 					PascalCaseJsonTagField    *string `json:"overrided_name"`
 					Slice                     []string
 					Tag                       string `json:"tag,omitempty"`
+					CreatedAt                 *time.Time
+					UpdatedAt                 time.Time
 				}
 
 				Header struct {
@@ -197,6 +231,8 @@ func TestWrapper(t *testing.T) {
 				query.Set("pascal_case_no_json_tag_field", "some_value_1")
 				query.Set("overrided_name", "some_value_2")
 				query.Set("tag", "some_tag_value")
+				query.Set("created_at", "2023-10-29T15:30:45Z")
+				query.Set("updated_at", "2024-01-01T12:00:00+01:00")
 				slice = []string{"name", "duration", "label"}
 				query.Set("slice", strings.Join(slice, ","))
 
@@ -258,6 +294,17 @@ func TestWrapper(t *testing.T) {
 
 			g.It("should parse unspecified field to zero value", func() {
 				require.Nil(g, reqObject.Query.FieldUnspecifiedInRequest)
+			})
+
+			g.It("should parse time.Time pointer field from query parameter", func() {
+				require.NotNil(g, reqObject.Query.CreatedAt)
+				expected := time.Date(2023, 10, 29, 15, 30, 45, 0, time.UTC)
+				assert.True(g, expected.Equal(*reqObject.Query.CreatedAt))
+			})
+
+			g.It("should parse time.Time field from query parameter with timezone", func() {
+				expected := time.Date(2024, 1, 1, 12, 0, 0, 0, time.FixedZone("", 3600))
+				assert.True(g, expected.Equal(reqObject.Query.UpdatedAt))
 			})
 
 		})

@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/schmurfy/chipi/schema"
@@ -19,11 +20,26 @@ import (
 )
 
 var (
-	_tracer  = otel.Tracer("chipi")
-	_noValue = reflect.Value{}
+	_tracer         = otel.Tracer("chipi")
+	_noValue        = reflect.Value{}
+	_timeStructType = reflect.TypeOf(time.Time{})
 )
 
+var wellKnownTypesConverters = map[reflect.Type]func(string) (reflect.Value, error){
+	_timeStructType: func(value string) (reflect.Value, error) {
+		t, err := time.Parse(time.RFC3339, value)
+		if err != nil {
+			return _noValue, err
+		}
+		return reflect.ValueOf(t), nil
+	},
+}
+
 func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
+	if converter, ok := wellKnownTypesConverters[fieldType]; ok {
+		return converter(value)
+	}
+
 	switch fieldType.Kind() {
 	case reflect.Ptr:
 		fieldType := fieldType.Elem()
