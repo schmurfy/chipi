@@ -138,6 +138,8 @@ func (b *Builder) Method(r chi.Router, pattern string, method string, reqObject 
 
 	if _, ok := reqObject.(wrapper.HandlerInterface); ok {
 		r.Method(method, pattern, wrapper.WrapRequest(reqObject))
+	} else if _, ok := reqObject.(wrapper.HandlerWithRequestInterface); ok {
+		r.Method(method, pattern, wrapper.WrapRequest(reqObject))
 	} else if rr, ok := reqObject.(rawHandler); ok {
 		r.Method(method, pattern, http.HandlerFunc(rr.Handle))
 	} else {
