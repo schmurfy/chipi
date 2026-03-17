@@ -2,6 +2,7 @@ package response
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -18,7 +19,7 @@ func (e *BytesEncoder) EncodeResponse(ctx context.Context, w http.ResponseWriter
 
 	_, err := w.Write(raw)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		fmt.Printf("failed to write response: %v\n", err)
 		return
 	}
 }
