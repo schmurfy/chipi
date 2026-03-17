@@ -2,6 +2,7 @@ package builder
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -83,7 +84,7 @@ func (b *Builder) ServeSchema(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	_, err = w.Write(data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Printf("failed to write response: %v\n", err)
 		return
 	}
 }

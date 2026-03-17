@@ -87,7 +87,7 @@ func main() {
 	router.Get("/redoc", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write(redocFile)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			fmt.Printf("failed to write response: %v\n", err)
 			return
 		}
 	})
@@ -96,7 +96,7 @@ func main() {
 		// embed
 		_, err := w.Write(indexFile)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			fmt.Printf("failed to write response: %v\n", err)
 			return
 		}
 

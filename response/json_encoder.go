@@ -3,6 +3,7 @@ package response
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -13,7 +14,7 @@ func (e *JsonEncoder) EncodeResponse(ctx context.Context, w http.ResponseWriter,
 
 	err := json.NewEncoder(w).Encode(obj)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		fmt.Printf("failed to write response: %v\n", err)
 		return
 	}
 
