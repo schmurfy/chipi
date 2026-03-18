@@ -23,11 +23,19 @@ type Method struct {
 	method    string
 	reqObject interface{}
 }
+type GlobalResponse struct {
+	StatusCode  int
+	Description string
+	Model       interface{}
+	ContentType string
+}
+
 type Builder struct {
-	swagger *openapi3.T
-	schema  *schema.Schema
-	router  *chi.Mux
-	methods []*Method
+	swagger       *openapi3.T
+	schema        *schema.Schema
+	router        *chi.Mux
+	methods       []*Method
+	globalErrors  []GlobalResponse
 }
 
 func New(r *chi.Mux, infos *openapi3.Info) (*Builder, error) {
@@ -48,6 +56,18 @@ func New(r *chi.Mux, infos *openapi3.Info) (*Builder, error) {
 	}
 
 	return ret, nil
+}
+
+func (b *Builder) AddGlobalResponse(statusCode int, description string, model interface{}, contentType string) {
+	if contentType == "" {
+		contentType = "application/json"
+	}
+	b.globalErrors = append(b.globalErrors, GlobalResponse{
+		StatusCode:  statusCode,
+		Description: description,
+		Model:       model,
+		ContentType: contentType,
+	})
 }
 
 func (b *Builder) AddTag(tag *openapi3.Tag) {

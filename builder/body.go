@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"strings"
+
 	"context"
 	"fmt"
 	"reflect"
@@ -24,18 +26,22 @@ func (b *Builder) generateBodyDoc(ctx context.Context, swagger *openapi3.T, op *
 			return fmt.Errorf("%s must implement BodyDecoder", requestObjectType.Name())
 		}
 
-		contentType, found := bodyField.Tag.Lookup("content-type")
+		contentTypeStr, found := bodyField.Tag.Lookup("content-type")
 		if !found {
-			contentType = "application/json"
+			contentTypeStr = "application/json"
 		}
 
 		body := openapi3.NewRequestBody()
 		bodyRef := &openapi3.RequestBodyRef{Value: body}
 
-		body.Content = openapi3.Content{
-			contentType: &openapi3.MediaType{
+		body.Content = openapi3.NewContent()
+
+
+
+		for _, contentType := range strings.Split(contentTypeStr, ",") {
+			body.Content[strings.TrimSpace(contentType)] = &openapi3.MediaType{
 				Schema: bodySchema,
-			},
+			}
 		}
 
 		tag := schema.ParseJsonTag(bodyField)
