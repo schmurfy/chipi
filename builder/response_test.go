@@ -9,8 +9,8 @@ import (
 	"github.com/franela/goblin"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
-	"github.com/schmurfy/chipi/response"
-	"github.com/schmurfy/chipi/shared"
+	"github.com/ruwanego/chipi/response"
+	"github.com/ruwanego/chipi/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

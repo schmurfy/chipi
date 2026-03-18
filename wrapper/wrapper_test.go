@@ -17,7 +17,7 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/go-chi/chi/v5"
-	"github.com/schmurfy/chipi/response"
+	"github.com/ruwanego/chipi/response"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

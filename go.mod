@@ -1,4 +1,4 @@
-module github.com/schmurfy/chipi
+module github.com/ruwanego/chipi
 
 go 1.23.0
 

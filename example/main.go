@@ -13,7 +13,7 @@ import (
 
 	_ "embed"
 
-	"github.com/schmurfy/chipi"
+	"github.com/ruwanego/chipi"
 )
 
 //go:embed index.html

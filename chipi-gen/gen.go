@@ -9,7 +9,7 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/schmurfy/chipi/gen"
+	"github.com/ruwanego/chipi/gen"
 )
 
 func main() {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
-	"github.com/schmurfy/chipi/schema"
-	"github.com/schmurfy/chipi/shared"
+	"github.com/ruwanego/chipi/schema"
+	"github.com/ruwanego/chipi/shared"
 )
 
 func (b *Builder) generateQueryParametersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, callbacksObject shared.ChipiCallbacks) error {

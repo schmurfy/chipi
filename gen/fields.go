@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"github.com/dave/dst"
-	"github.com/schmurfy/chipi/shared"
+	"github.com/ruwanego/chipi/shared"
 )
 
 type commentedField struct {

@@ -1,5 +1,5 @@
 [![codecov](https://codecov.io/gh/schmurfy/chipi/branch/master/graph/badge.svg?token=A6413R1ZXH)](https://codecov.io/gh/schmurfy/chipi)
-[![Go Report Card](https://goreportcard.com/badge/github.com/schmurfy/chipi)](https://goreportcard.com/report/github.com/schmurfy/chipi)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ruwanego/chipi)](https://goreportcard.com/report/github.com/ruwanego/chipi)
 
 Chipi is a simple, code-driven OpenAPI v3.1 generator for the [`chi`](https://github.com/go-chi/chi) HTTP router.
 
@@ -15,7 +15,7 @@ With Chipi, you write strongly-typed request/response structs, register them usi
 ## Installation
 
 ```bash
-go get github.com/schmurfy/chipi
+go get github.com/ruwanego/chipi
 ```
 
 ## Getting Started
@@ -33,8 +33,8 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
-	"github.com/schmurfy/chipi/builder"
-	"github.com/schmurfy/chipi/shared"
+	"github.com/ruwanego/chipi/builder"
+	"github.com/ruwanego/chipi/shared"
 )
 
 func main() {

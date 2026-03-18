@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/schmurfy/chipi/gen"
+	"github.com/ruwanego/chipi/gen"
 )
 
 

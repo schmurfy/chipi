@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/schmurfy/chipi/request"
-	"github.com/schmurfy/chipi/response"
+	"github.com/ruwanego/chipi/request"
+	"github.com/ruwanego/chipi/response"
 )
 
 type User struct {

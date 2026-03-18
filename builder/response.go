@@ -8,9 +8,9 @@ import (
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/schmurfy/chipi/schema"
-	"github.com/schmurfy/chipi/shared"
-	"github.com/schmurfy/chipi/wrapper"
+	"github.com/ruwanego/chipi/schema"
+	"github.com/ruwanego/chipi/shared"
+	"github.com/ruwanego/chipi/wrapper"
 )
 
 func (b *Builder) generateResponseDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObject interface{}, requestObjectType reflect.Type, callbacksObject shared.ChipiCallbacks) error {

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/schmurfy/chipi/schema"
-	"github.com/schmurfy/chipi/shared"
+	"github.com/ruwanego/chipi/schema"
+	"github.com/ruwanego/chipi/shared"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"

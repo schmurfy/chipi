@@ -9,9 +9,9 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
-	"github.com/schmurfy/chipi/schema"
-	"github.com/schmurfy/chipi/shared"
-	"github.com/schmurfy/chipi/wrapper"
+	"github.com/ruwanego/chipi/schema"
+	"github.com/ruwanego/chipi/shared"
+	"github.com/ruwanego/chipi/wrapper"
 )
 
 type rawHandler interface {

@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/schmurfy/chipi/response"
+	"github.com/ruwanego/chipi/response"
 )
 
 type Pet struct {

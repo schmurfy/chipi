@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/schmurfy/chipi/internal/testdata/monster"
-	"github.com/schmurfy/chipi/internal/testdata/pet"
-	"github.com/schmurfy/chipi/shared"
+	"github.com/ruwanego/chipi/internal/testdata/monster"
+	"github.com/ruwanego/chipi/internal/testdata/pet"
+	"github.com/ruwanego/chipi/shared"
 )
 
 type RecursiveGroup struct {

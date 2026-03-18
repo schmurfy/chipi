@@ -8,4 +8,4 @@ enabled = true
 name = "go"
 
   [analyzers.meta]
-  import_root = "github.com/schmurfy/chipi"
+  import_root = "github.com/ruwanego/chipi"

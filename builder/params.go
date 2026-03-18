@@ -9,7 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
-	"github.com/schmurfy/chipi/schema"
+	"github.com/ruwanego/chipi/schema"
 )
 
 func (b *Builder) generateParametersDoc(ctx context.Context, swagger *openapi3.T, op *openapi3.Operation, requestObjectType reflect.Type, method string, routeContext *chi.Context) error {
