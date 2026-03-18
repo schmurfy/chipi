@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/schmurfy/chipi/branch/master/graph/badge.svg?token=A6413R1ZXH)](https://codecov.io/gh/schmurfy/chipi)
+[![codecov](https://codecov.io/gh/ruwanego/chipi/branch/master/graph/badge.svg?token=A6413R1ZXH)](https://codecov.io/gh/ruwanego/chipi)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ruwanego/chipi)](https://goreportcard.com/report/github.com/ruwanego/chipi)
 
 Chipi is a simple, code-driven OpenAPI v3.1 generator for the [`chi`](https://github.com/go-chi/chi) HTTP router.
