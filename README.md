@@ -92,6 +92,33 @@ if err != nil {
 - `Query` is optional and will match query parameters (ex: "?count=4")
 - `Body` is optional and if present can be either a structure (json tags will be honored)
 - `Response` is also optional and define what is returned when eveything works well
+- `Errors` is optional and define endpoint-specific error responses
+
+### Multiple MIME Types
+You can specify multiple MIME types for request bodies, responses, and errors by providing a comma-separated list in the `content-type` struct tag:
+```go
+Body struct {
+    Name string
+} `content-type:"application/json, application/xml"`
+```
+
+### Error Responses
+You can define error responses both globally and per-endpoint:
+
+**Global Errors:**
+You can define global errors directly on the builder object. These errors will be applied to every endpoint automatically.
+```go
+b.AddGlobalResponse(400, "Bad Request", MyErrorModel{}, "application/json")
+```
+
+**Endpoint-Specific Errors:**
+You can define endpoint-specific errors by adding an `Errors` field to your request structure. The `chipi` struct tag specifies the HTTP status code. If an endpoint defines an error for a status code that is also defined globally, the endpoint-specific error takes precedence.
+```go
+Errors struct {
+    BadRequest MyErrorModel `chipi:"400" description:"Specific Bad Request"`
+    Internal   struct{}     `chipi:"500" description:"Internal Server Error"`
+}
+```
 
 
 ## Supported OpenAPI (v3.1) attributes
@@ -157,11 +184,4 @@ Special tags can be used on structure's fields to set specific behaviors:
 - description [comment,tag]
 - content-type [tag]
 
-## Caveats
-
-This solution is not perfect and lack some features but I am sure a way to implement them can be found if needed:
-
-- no way to specify errors response, in my experience errors are often reported in a similar way for the whole api which may be documented as an introduction to the api.
-
-- no way to specify multiple mime type for body/response: that is a choice but what I need is a simple solution, I am not trying to solve every problems.
 
