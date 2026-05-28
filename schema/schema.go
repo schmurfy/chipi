@@ -353,6 +353,13 @@ func (s *Schema) generateStructureSchema(ctx context.Context, doc *openapi3.T, t
 			if tag.Example != nil {
 				fieldSchema.Value.Example = tag.GetExample()
 			}
+
+			if tag.Unit != nil {
+				fieldSchema.Value.Extensions = map[string]any{
+					"x-unit": *tag.Unit,
+				}
+			}
+
 		}
 
 		if tag.Required != nil && *tag.Required {

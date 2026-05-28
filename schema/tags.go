@@ -23,6 +23,7 @@ type jsonTag struct {
 	Description *string
 	Example     *string
 	Style       *string
+	Unit        *string
 }
 
 func (t *jsonTag) GetOmitEmpty() bool {
@@ -151,6 +152,10 @@ func ParseJsonTag(f reflect.StructField) *jsonTag {
 	if val, found := f.Tag.Lookup("explode"); found {
 		b := (val == "true")
 		ret.Explode = &b
+	}
+
+	if val, found := f.Tag.Lookup("unit"); found {
+		ret.Unit = stringPtr(val)
 	}
 
 	return ret
