@@ -449,6 +449,31 @@ func TestSchema(t *testing.T) {
 				"type": "string",
 				"format": "date-time"
 			}`)
+
+			g.It("should set x-unit extension from unit tag", func() {
+				st := struct {
+					Mileage         uint32 `json:"mileage" unit:"m"`
+					StateOfCharge   uint32 `json:"state_of_charge"`
+				}{}
+
+				typ := reflect.TypeOf(&st)
+				schema, err := s.GenerateSchemaFor(ctx, doc, typ)
+				require.NoError(g, err)
+
+				_, err = json.Marshal(schema)
+				require.NoError(g, err)
+
+				props := schema.Value.Properties
+				require.NotNil(g, props)
+
+				mileage := props["mileage"]
+				require.NotNil(g, mileage)
+				assert.Equal(g, "m", mileage.Value.Extensions["x-unit"])
+
+				soc := props["state_of_charge"]
+				require.NotNil(g, soc)
+				assert.Nil(g, soc.Value.Extensions)
+			})
 		})
 
 	})
