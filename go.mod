@@ -8,7 +8,7 @@ require (
 	github.com/dave/dst v0.27.3
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/getkin/kin-openapi v0.132.0
-	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/chi/v5 v5.2.4
 	github.com/go-chi/cors v1.2.2
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
