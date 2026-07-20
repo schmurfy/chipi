@@ -280,14 +280,7 @@ func WrapRequest(obj interface{}) http.HandlerFunc {
 		var vv reflect.Value
 		var response reflect.Value
 
-		ctx, span := _tracer.Start(r.Context(), "WrapRequest")
-
-		defer func() {
-			if err != nil {
-				span.RecordError(err)
-			}
-			span.End()
-		}()
+		ctx := r.Context()
 
 		parsingErrors := map[string]string{}
 
