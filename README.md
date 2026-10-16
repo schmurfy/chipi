@@ -4,6 +4,7 @@
 After being frustrated multiple times about the lack of easy way to generate an openapi doc directly from
 the code I created this library as an experiment and it went way further than I expected.
 
+dummy
 ## Other solutions
 
 My main problem with the alternatives is simple: I don't want to maintain comments to describe my apis, in my experience those will slowly drift and become inaccurate. On the other hand if the code itself is the documentation it cannot technically drift or else it will not longer works.
