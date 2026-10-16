@@ -2,6 +2,7 @@ package wrapper
 
 import (
 	"context"
+	"encoding"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -75,7 +76,20 @@ func convertValue(fieldType reflect.Type, value string) (reflect.Value, error) {
 	case reflect.Struct:
 		setValue := reflect.New(fieldType)
 		iface := setValue.Interface()
-		err := json.Unmarshal([]byte(value), &iface)
+		if unmarshaler, ok := iface.(encoding.TextUnmarshaler); ok {
+			err := unmarshaler.UnmarshalText([]byte(value))
+			if err != nil {
+				return _noValue, err
+			}
+			return setValue.Elem(), nil
+		}
+
+		data := []byte(value)
+		if !json.Valid(data) {
+			// a bare value like 2024-01-31 for a type decoding itself from a JSON string
+			data, _ = json.Marshal(value)
+		}
+		err := json.Unmarshal(data, &iface)
 		if err != nil {
 			return _noValue, err
 		}

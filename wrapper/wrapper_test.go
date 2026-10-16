@@ -52,6 +52,32 @@ func (r *createTestUser) Handle(ctx context.Context, w http.ResponseWriter) erro
 	return encoder.Encode(r.Body)
 }
 
+type jsonStringDate struct {
+	Year, Month, Day int
+}
+
+func (d *jsonStringDate) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	t, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		return err
+	}
+	d.Year, d.Month, d.Day = t.Year(), int(t.Month()), t.Day()
+	return nil
+}
+
+type textValue struct {
+	Value string
+}
+
+func (v *textValue) UnmarshalText(b []byte) error {
+	v.Value = strings.ToUpper(string(b))
+	return nil
+}
+
 func TestWrapper(t *testing.T) {
 	g := goblin.Goblin(t)
 
@@ -93,6 +119,12 @@ func TestWrapper(t *testing.T) {
 
 				Loc    loc
 				LocPtr *loc
+
+				JSONDate    jsonStringDate
+				JSONDatePtr *jsonStringDate
+
+				Text    textValue
+				TextPtr *textValue
 			}
 			ctx := context.Background()
 
@@ -132,6 +164,13 @@ func TestWrapper(t *testing.T) {
 
 				{"LocPtr", `{"Type": "toto"}`, loc{Type: "toto"}},
 				{"Loc", `{"Type": "titi"}`, loc{Type: "titi"}},
+
+				{"JSONDate", "2024-01-31", jsonStringDate{2024, 1, 31}},
+				{"JSONDate", `"2024-01-31"`, jsonStringDate{2024, 1, 31}},
+				{"JSONDatePtr", "2024-01-31", jsonStringDate{2024, 1, 31}},
+
+				{"Text", "abc", textValue{Value: "ABC"}},
+				{"TextPtr", "abc", textValue{Value: "ABC"}},
 			}
 
 			for _, tt := range tests {
@@ -153,6 +192,28 @@ func TestWrapper(t *testing.T) {
 				})
 			}
 
+		})
+
+		g.Describe("struct parsing errors", func() {
+			g.It("should reject a bare value for a struct decoded from a JSON object", func() {
+				st := struct {
+					Loc struct{ Type string }
+				}{}
+				vv := reflect.ValueOf(&st).Elem().FieldByName("Loc")
+
+				err := setFValue(context.Background(), "unused", vv, "toto")
+				require.Error(g, err)
+			})
+
+			g.It("should reject an invalid bare value", func() {
+				st := struct {
+					JSONDate jsonStringDate
+				}{}
+				vv := reflect.ValueOf(&st).Elem().FieldByName("JSONDate")
+
+				err := setFValue(context.Background(), "unused", vv, "2024-13-45")
+				require.Error(g, err)
+			})
 		})
 
 		g.Describe("time.Time parsing errors", func() {
